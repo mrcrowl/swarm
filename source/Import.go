@@ -45,6 +45,11 @@ func NewImport(importPath string) *Import {
 	return &Import{filename, directory, directive, isSelfRelative, isParentRelative, isRooted, IsSolo}
 }
 
+// Ext returns the extension of the Import's filename
+func (imp *Import) Ext() string {
+	return path.Ext(imp.Filename)
+}
+
 // Path is the complete path for this import
 func (imp *Import) Path() string {
 	if imp.IsSolo {

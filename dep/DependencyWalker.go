@@ -1,17 +1,16 @@
 package dep
 
 import (
-	"fmt"
 	"gospm/io"
 	"gospm/source"
-	"path/filepath"
+	"log"
 	"strings"
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file
 func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *source.FileSet {
 	imports, links := followDependencyGraph(workspace, entryFileRelativePath)
-	fileset := source.NewFileSet(workspace, imports, links)
+	fileset := source.NewFileSet(imports, links, workspace)
 
 	return fileset
 }
@@ -23,7 +22,7 @@ func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath st
 	entryFileRelativePath = strings.Replace(entryFileRelativePath, "\\", "/", -1)
 	queue.pushPath(entryFileRelativePath)
 
-	nonrels := make(map[string]int)
+	// nonrels := make(map[string]int)
 
 	follow := func(imp *source.Import) {
 		var file *source.File
@@ -31,29 +30,31 @@ func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath st
 
 		importPath := imp.Path()
 		if file, err = workspace.ReadSourceFile(imp); err != nil {
-			println("MISSING: " + importPath)
+			log.Println("MISSING: " + importPath)
 			// println("Could not find " + rootRelativeDepPath)
 			return
 		}
 
 		var dependencyIDs []string
 		for _, dep := range readDependencies(file) {
-			if dep.IsRooted {
-				if val, ok := nonrels[dep.Path()]; ok {
-					nonrels[dep.Path()] = val + 1
-				} else {
-					nonrels[dep.Path()] = 1
-				}
+			if dep.IsSolo {
+				// if val, ok := nonrels[dep.Path()]; ok {
+				// 	nonrels[dep.Path()] = val + 1
+				// } else {
+				// 	nonrels[dep.Path()] = 1
+				// }
 			} else {
 				depRootRelative := imp.ToRootRelativeImport(dep)
 				queue.push(depRootRelative)
 
-				dependencyIDs = append(dependencyIDs, dep.Path())
+				dependencyIDs = append(dependencyIDs, depRootRelative.Path())
 			}
 		}
 
-		link := source.NewDependencyLink(importPath, dependencyIDs)
-		links = append(links, link)
+		if len(dependencyIDs) > 0 {
+			link := source.NewDependencyLink(importPath, dependencyIDs)
+			links = append(links, link)
+		}
 	}
 
 	for queue.nonEmpty() {
@@ -62,9 +63,9 @@ func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath st
 		}
 	}
 
-	for k, v := range nonrels {
-		fmt.Printf("NON-REL: %s --> %d\n", k, v)
-	}
+	// for k, v := range nonrels {
+	// fmt.Printf("NON-REL: %s --> %d\n", k, v)
+	// }
 
 	return queue.outputImports(), links
 }
@@ -80,13 +81,8 @@ func readDependencies(file *source.File) []*source.Import {
 	if dependencies, ok := source.ParseRegisterDependencies(line); ok {
 		filteredDeps = make([]*source.Import, 0, len(dependencies))
 		for _, dependencyImportPath := range dependencies {
-			ext := filepath.Ext(dependencyImportPath)
-			if ext == "" {
-				dependencyImport := NewImport(dependencyImportPath)
-				filteredDeps = append(filteredDeps, dependencyImport)
-			} else {
-				println("EXT-MIX: " + dependencyImportPath)
-			}
+			dependencyImport := source.NewImport(dependencyImportPath)
+			filteredDeps = append(filteredDeps, dependencyImport)
 		}
 	}
 

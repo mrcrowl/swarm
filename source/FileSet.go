@@ -38,6 +38,17 @@ func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace
 	return fs
 }
 
+// Files returns a list of all Files in the set
+func (fs *FileSet) Files() []*File {
+	result := make([]*File, len(fs.index))
+	i := 0
+	for _, v := range fs.index {
+		result[i] = v
+		i++
+	}
+	return result
+}
+
 // Add adds a File to a FileSet
 func (fs *FileSet) Add(file *File) bool {
 	if fs.contains(file.ID) {
@@ -79,8 +90,8 @@ func (fs *FileSet) contains(id string) bool {
 	return false
 }
 
-// count returns the number of files
-func (fs *FileSet) count() int {
+// Count returns the number of files
+func (fs *FileSet) Count() int {
 	return len(fs.index)
 }
 
@@ -90,5 +101,5 @@ func (fs *FileSet) linkCount() int {
 }
 
 func (fs *FileSet) nonEmpty() bool {
-	return fs.count() > 0
+	return fs.Count() > 0
 }

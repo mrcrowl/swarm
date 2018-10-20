@@ -1,3 +1,4 @@
 *.exe
 debug
 */**/debug.test
+gospm.exe~

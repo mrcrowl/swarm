@@ -29,7 +29,7 @@ func (iq *importQueue) outputImports() []*source.Import {
 // pushPath adds a reference to an import using its path
 func (iq *importQueue) pushPath(importPath string) {
 	if !iq.seen(importPath) {
-		iq.push(NewImport(importPath))
+		iq.push(source.NewImport(importPath))
 	}
 }
 

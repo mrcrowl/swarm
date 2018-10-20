@@ -26,8 +26,8 @@ func ReadFirstLine(filepath string) (string, error) {
 func ReadContents(filepath string) (string, error) {
 	bytes, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return string(bytes), nil
+		return "", err
 	}
 
-	return "", err
+	return string(bytes), nil
 }

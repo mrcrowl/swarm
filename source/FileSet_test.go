@@ -17,7 +17,7 @@ func TestContains(t *testing.T) {
 	assert.True(t, sut.contains(ConfigAppID))
 	assert.True(t, sut.containsFile(file))
 	assert.False(t, sut.contains("aksdjfhzzaksjdfh"))
-	assert.Equal(t, 1, sut.count())
+	assert.Equal(t, 1, sut.Count())
 	assert.True(t, sut.nonEmpty())
 	assert.Equal(t, 0, sut.linkCount())
 }
@@ -26,7 +26,7 @@ func TestDependency(t *testing.T) {
 	sut := NewEmptyFileSet()
 	sut.Add(newFile("abcd", "c:\\abcd"))
 	sut.Add(newFile("abcd", "c:\\abcd"))
-	assert.Equal(t, 1, sut.count())
+	assert.Equal(t, 1, sut.Count())
 }
 
 func TestAddDistinct(t *testing.T) {
@@ -57,6 +57,6 @@ func TestNewBuilder(t *testing.T) {
 	}
 	ws := NewWorkspace("C:\\WF\\LP\\web\\App")
 	sut := NewFileSet(imports, links, ws)
-	assert.Equal(t, 3, sut.count())
+	assert.Equal(t, 3, sut.Count())
 	assert.Equal(t, 1, sut.linkCount())
 }

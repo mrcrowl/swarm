@@ -24,9 +24,9 @@ func TestUniqueDependency(t *testing.T) {
 
 func TestOutputImports(t *testing.T) {
 	sut := newImportQueue()
-	abcd := NewImport("abcd")
-	efgh := NewImport("efgh/xyz.js")
-	ijkl := NewImport("ijkl/mnop.js")
+	abcd := source.NewImport("abcd")
+	efgh := source.NewImport("efgh/xyz.js")
+	ijkl := source.NewImport("ijkl/mnop.js")
 	sut.push(abcd)
 	sut.push(efgh)
 	sut.push(ijkl)

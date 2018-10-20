@@ -14,21 +14,27 @@ func ParseSystemJSFormattedFile(fileContents string) (*FileElements, error) {
 		return nil, err
 	}
 
-	lastLineIndex := len(lines) - 1
-	registerLine := lines[0]
-	sourceMapLine := lines[lastLineIndex]
+	numLines := len(lines)
+	var imports []string
+	var foundRegister = false
+	var sourceMappingURL = ""
+	var foundSourceMap = false
+	var body []string
+	if numLines > 0 {
+		registerLine := lines[0]
+		imports, foundRegister = ParseRegisterDependencies(registerLine)
 
-	imports, foundRegister := ParseRegisterDependencies(registerLine)
-	sourceMappingURL, foundSourceMap := parseSourceMappingURL(sourceMapLine)
+		sourceMapLine := lines[numLines-1]
+		sourceMappingURL, foundSourceMap = parseSourceMappingURL(sourceMapLine)
 
-	body := chooseBodyLines(lines, foundSourceMap)
+		body = chooseBodyLines(lines, foundSourceMap)
+	}
 
 	return &FileElements{
-		name:             "",
 		imports:          imports,
 		body:             body,
 		sourceMappingURL: sourceMappingURL,
-		lineCount:        lastLineIndex + 1,
+		lineCount:        numLines,
 		isSystemJS:       foundRegister,
 	}, nil
 }

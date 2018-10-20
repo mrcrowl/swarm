@@ -2,7 +2,6 @@ package source
 
 // FileElements describes a systemjs file
 type FileElements struct {
-	name             string
 	imports          []string
 	body             []string
 	sourceMappingURL string
@@ -10,7 +9,13 @@ type FileElements struct {
 	isSystemJS       bool
 }
 
-// Parse reads the contents of a SystemJS formatted JS file into its component parts
-func Parse(contents string) *FileElements {
-	return nil
+// FailedFileElements is the default placeholder for a file that couldn't be loaded
+func FailedFileElements() *FileElements {
+	return &FileElements{
+		imports:          nil,
+		body:             nil,
+		sourceMappingURL: "",
+		lineCount:        0,
+		isSystemJS:       false,
+	}
 }
