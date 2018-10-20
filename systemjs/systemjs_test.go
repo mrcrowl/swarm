@@ -52,6 +52,7 @@ func TestParseWrongFileType(t *testing.T) {
 	assert.Equal(t, 3, len(elems.body))
 	assert.Equal(t, "", elems.sourceMappingURL)
 	assert.Equal(t, 3, elems.lineCount)
+	assert.False(t, elems.isSystemJS)
 }
 
 func TestParseSourceMapOnly(t *testing.T) {
@@ -66,6 +67,7 @@ func TestParseSourceMapOnly(t *testing.T) {
 	assert.Equal(t, 3, len(elems.body))
 	assert.Equal(t, "blah.xml", elems.sourceMappingURL)
 	assert.Equal(t, 4, elems.lineCount)
+	assert.False(t, elems.isSystemJS)
 }
 
 func TestParseRegisterOnly(t *testing.T) {
@@ -78,4 +80,29 @@ func TestParseRegisterOnly(t *testing.T) {
 	assert.Equal(t, 2, len(elems.body))
 	assert.Equal(t, "", elems.sourceMappingURL)
 	assert.Equal(t, 2, elems.lineCount)
+}
+
+func TestParseRegisterNoImports(t *testing.T) {
+	source := `System.register([], function (exports_1, context_1) {
+}`
+
+	elems, err := ParseSystemJSFormattedFile(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(elems.imports))
+}
+
+func TestParseRegisterInvalidRegister(t *testing.T) {
+	source := `System.register(][, function (exports_1, context_1) {
+}`
+	elems, err := ParseSystemJSFormattedFile(source)
+	assert.Nil(t, err)
+	assert.False(t, elems.isSystemJS)
+}
+
+func TestParseRegisterInvalidRegister2(t *testing.T) {
+	source := `System.register([, function (exports_1, context_1) {
+}`
+	elems, err := ParseSystemJSFormattedFile(source)
+	assert.Nil(t, err)
+	assert.False(t, elems.isSystemJS)
 }

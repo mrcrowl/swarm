@@ -60,7 +60,7 @@ func ParseRegisterDependencies(line string) ([]string, bool) {
 
 	openPos := strings.Index(line, "[")
 	closePos := strings.LastIndex(line, "]")
-	if openPos < 0 || closePos < 0 {
+	if openPos < 0 || closePos < 0 || openPos > closePos {
 		return nil, false // not a register line
 	}
 
