@@ -2,7 +2,6 @@ package dep
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -16,10 +15,6 @@ func NewWorkspace(rootPath string) *Workspace {
 	return &Workspace{
 		rootPath,
 	}
-}
-
-func (ws *Workspace) resolveRelativeDependency(rootRelativeFilepath string, dependencyRelativePath string) string {
-	return path.Join(path.Dir(rootRelativeFilepath), dependencyRelativePath)
 }
 
 func (ws *Workspace) readSourceFile(rootRelativeFilepath string) (*SourceFile, error) {

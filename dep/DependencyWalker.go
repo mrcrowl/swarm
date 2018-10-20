@@ -6,82 +6,35 @@ import (
 	"strings"
 )
 
-// DependencyQueue represents a queue of dependencies to process
-type DependencyQueue struct {
-	dependencies    []string
-	dependencyIndex map[string]bool
-}
-
-func newDependencyQueue() *DependencyQueue {
-	return &DependencyQueue{
-		dependencies:    make([]string, 0, 2048),
-		dependencyIndex: make(map[string]bool),
-	}
-}
-
-// AddDependency adds a reference to a dependent file
-func (ds *DependencyQueue) push(dependency string) {
-	if !ds.has(dependency) {
-		ds.dependencyIndex[dependency] = true
-		ds.dependencies = append(ds.dependencies, dependency)
-	}
-}
-
-func (ds *DependencyQueue) pop() (bool, string) {
-	if ds.count() > 0 {
-		dependency := ds.dependencies[0]
-		ds.dependencies = ds.dependencies[1:]
-		return true, dependency
-	}
-
-	return false, ""
-}
-
-// HasDependency checks for a dependent file
-func (ds *DependencyQueue) has(dependency string) bool {
-	if _, ok := ds.dependencyIndex[dependency]; ok {
-		return true
-	}
-	return false
-}
-
-// NumDependencies returns the number of dependent files
-func (ds *DependencyQueue) count() int {
-	return len(ds.dependencies)
-}
-
-func (ds *DependencyQueue) nonEmpty() bool {
-	return len(ds.dependencies) > 0
-}
-
-func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) *DependencyQueue {
-	queue := newDependencyQueue()
+func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) *ImportQueue {
+	queue := newImportQueue()
 
 	entryFileRelativePath = strings.Replace(entryFileRelativePath, "\\", "/", -1)
-	queue.push(entryFileRelativePath)
+	queue.pushPath(entryFileRelativePath)
 
 	nonrels := make(map[string]int)
 
-	follow := func(rootRelativeDepPath string) {
+	follow := func(imp *Import) {
 		var file *SourceFile
 		var err error
 
-		if file, err = workspace.readSourceFile(rootRelativeDepPath); err != nil {
-			println("MISSING: " + rootRelativeDepPath)
+		importPath := imp.path()
+		if file, err = workspace.readSourceFile(importPath); err != nil {
+			println("MISSING: " + importPath)
 			// println("Could not find " + rootRelativeDepPath)
 			return
 		}
 
 		for _, dep := range readDependencies(file) {
-			if strings.HasPrefix(dep, "./") || strings.HasPrefix(dep, "../") {
-				dependencyRootRelativePath := workspace.resolveRelativeDependency(rootRelativeDepPath, dep)
-				queue.push(dependencyRootRelativePath)
-			} else {
-				if val, ok := nonrels[dep]; ok {
-					nonrels[dep] = val + 1
+			if dep.isRooted {
+				if val, ok := nonrels[dep.path()]; ok {
+					nonrels[dep.path()] = val + 1
 				} else {
-					nonrels[dep] = 1
+					nonrels[dep.path()] = 1
 				}
+			} else {
+				depRootRelative := imp.toRootRelativeImport(dep)
+				queue.push(depRootRelative)
 			}
 		}
 	}
@@ -99,7 +52,7 @@ func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) *
 	return queue
 }
 
-func readDependencies(file *SourceFile) []string {
+func readDependencies(file *SourceFile) []*Import {
 	var line string
 	var err error
 	if line, err = file.ReadFirstLine(); err != nil {
@@ -114,14 +67,15 @@ func readDependencies(file *SourceFile) []string {
 
 	dependencySlice := line[(openPos + 1):closePos]
 	dependencies := strings.Split(dependencySlice, ", ")
-	filteredDeps := make([]string, 0, len(dependencies))
+	filteredDeps := make([]*Import, 0, len(dependencies))
 	for _, quotedDependency := range dependencies {
-		trimmedDep := strings.Trim(quotedDependency, "\"")
-		ext := filepath.Ext(trimmedDep)
+		trimmedDepPath := strings.Trim(quotedDependency, "\"")
+		ext := filepath.Ext(trimmedDepPath)
 		if ext == "" {
-			filteredDeps = append(filteredDeps, trimmedDep)
+			dependencyImport := newImport(trimmedDepPath)
+			filteredDeps = append(filteredDeps, dependencyImport)
 		} else {
-			println("EXT-MIX: " + trimmedDep)
+			println("EXT-MIX: " + trimmedDepPath)
 		}
 	}
 
