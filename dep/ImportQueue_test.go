@@ -1,20 +1,21 @@
 package dep
 
 import (
+	"gospm/source"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSeenImport(t *testing.T) {
-	var sut = newImportQueue()
+	sut := newImportQueue()
 	sut.pushPath("abcd")
 	assert.True(t, sut.seen("abcd"))
 	assert.False(t, sut.seen("efgh"))
 }
 
 func TestUniqueDependency(t *testing.T) {
-	var sut = newImportQueue()
+	sut := newImportQueue()
 	sut.pushPath("abcd")
 	assert.Equal(t, 1, sut.count())
 	sut.pushPath("abcd")
@@ -22,14 +23,14 @@ func TestUniqueDependency(t *testing.T) {
 }
 
 func TestOutputImports(t *testing.T) {
-	var sut = newImportQueue()
-	var abcd = newImport("abcd")
-	var efgh = newImport("efgh/xyz.js")
-	var ijkl = newImport("ijkl/mnop.js")
+	sut := newImportQueue()
+	abcd := NewImport("abcd")
+	efgh := NewImport("efgh/xyz.js")
+	ijkl := NewImport("ijkl/mnop.js")
 	sut.push(abcd)
 	sut.push(efgh)
 	sut.push(ijkl)
 	sut.push(abcd)
-	imports := sut.OutputImports()
-	assert.ElementsMatch(t, []*Import{abcd, ijkl, efgh}, imports)
+	imports := sut.outputImports()
+	assert.ElementsMatch(t, []*source.Import{abcd, ijkl, efgh}, imports)
 }

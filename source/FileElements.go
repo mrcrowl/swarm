@@ -1,4 +1,4 @@
-package systemjs
+package source
 
 // FileElements describes a systemjs file
 type FileElements struct {

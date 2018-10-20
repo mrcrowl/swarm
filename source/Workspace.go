@@ -1,4 +1,4 @@
-package dep
+package source
 
 import (
 	"os"
@@ -22,11 +22,12 @@ func (ws *Workspace) RootPath() string {
 	return ws.rootPath
 }
 
-func (ws *Workspace) readSourceFile(rootRelativeFilepath string) (*SourceFile, error) {
+// ReadSourceFile loads a source file
+func (ws *Workspace) ReadSourceFile(imp *Import) (*File, error) {
 	exists := false
 	absoluteFilePath := ""
 	for _, ext := range []string{"", ".js"} {
-		absoluteFilePath = filepath.Join(ws.rootPath, (rootRelativeFilepath + ext))
+		absoluteFilePath = filepath.Join(ws.rootPath, (imp.Path() + ext))
 		if _, err := os.Stat(absoluteFilePath); os.IsNotExist(err) {
 			continue
 		}
@@ -35,7 +36,7 @@ func (ws *Workspace) readSourceFile(rootRelativeFilepath string) (*SourceFile, e
 	}
 
 	if exists {
-		return NewSourceFile(absoluteFilePath), nil
+		return newFile(imp.Path(), absoluteFilePath), nil
 	}
 
 	return nil, os.ErrNotExist

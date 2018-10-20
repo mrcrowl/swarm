@@ -1,4 +1,4 @@
-package systemjs
+package source
 
 import (
 	"bufio"
