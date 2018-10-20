@@ -3,14 +3,25 @@ package dep
 // ImportQueue represents a queue of dependencies to process
 type ImportQueue struct {
 	imports   []*Import
-	seenIndex map[string]bool
+	seenIndex map[string]*Import
 }
 
 func newImportQueue() *ImportQueue {
 	return &ImportQueue{
 		imports:   make([]*Import, 0, 2048),
-		seenIndex: make(map[string]bool),
+		seenIndex: make(map[string]*Import),
 	}
+}
+
+// OutputImports lists the imports that were added to the queue
+func (iq *ImportQueue) OutputImports() []*Import {
+	outputs := make([]*Import, len(iq.seenIndex))
+	i := 0
+	for _, v := range iq.seenIndex {
+		outputs[i] = v
+		i++
+	}
+	return outputs
 }
 
 // pushPath adds a reference to an import using its path
@@ -23,7 +34,7 @@ func (iq *ImportQueue) pushPath(importPath string) {
 // push adds a reference to an import
 func (iq *ImportQueue) push(imp *Import) {
 	if !iq.seen(imp.path()) {
-		iq.seenIndex[imp.path()] = true
+		iq.seenIndex[imp.path()] = imp
 		iq.imports = append(iq.imports, imp)
 	}
 }

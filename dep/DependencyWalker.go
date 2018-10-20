@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) *ImportQueue {
+func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) []*Import {
 	queue := newImportQueue()
 
 	entryFileRelativePath = strings.Replace(entryFileRelativePath, "\\", "/", -1)
@@ -50,7 +50,7 @@ func followDependencyGraph(workspace *Workspace, entryFileRelativePath string) *
 		fmt.Printf("NON-REL: %s --> %d\n", k, v)
 	}
 
-	return queue
+	return queue.OutputImports()
 }
 
 func readDependencies(file *SourceFile) []*Import {
@@ -60,15 +60,17 @@ func readDependencies(file *SourceFile) []*Import {
 		return nil
 	}
 
-	dependencies := systemjs.ParseRegisterDependencies(line)
-	filteredDeps := make([]*Import, 0, len(dependencies))
-	for _, dependencyImportPath := range dependencies {
-		ext := filepath.Ext(dependencyImportPath)
-		if ext == "" {
-			dependencyImport := newImport(dependencyImportPath)
-			filteredDeps = append(filteredDeps, dependencyImport)
-		} else {
-			println("EXT-MIX: " + dependencyImportPath)
+	var filteredDeps []*Import
+	if dependencies, ok := systemjs.ParseRegisterDependencies(line); ok {
+		filteredDeps = make([]*Import, 0, len(dependencies))
+		for _, dependencyImportPath := range dependencies {
+			ext := filepath.Ext(dependencyImportPath)
+			if ext == "" {
+				dependencyImport := newImport(dependencyImportPath)
+				filteredDeps = append(filteredDeps, dependencyImport)
+			} else {
+				println("EXT-MIX: " + dependencyImportPath)
+			}
 		}
 	}
 
