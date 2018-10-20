@@ -1,6 +1,7 @@
 package dep
 
 import (
+	"gospm/dep"
 	"log"
 	"path/filepath"
 
@@ -9,15 +10,15 @@ import (
 
 // WorkspaceWatcher is used to recursively watch for file changes within a workspace
 type WorkspaceWatcher struct {
-	workspace *Workspace
+	workspace *dep.Workspace
 	channel   chan notify.EventInfo
 }
 
 // NewWorkspaceWatcher creates a new WorkspaceWatcher
-func NewWorkspaceWatcher(workspace *Workspace) *WorkspaceWatcher {
+func NewWorkspaceWatcher(workspace *dep.Workspace) *WorkspaceWatcher {
 	channel := make(chan notify.EventInfo, 2048)
 
-	rootRecursivePattern := filepath.Join(workspace.rootPath, "./...")
+	rootRecursivePattern := filepath.Join(workspace.RootPath(), "./...")
 	if err := notify.Watch(rootRecursivePattern, channel, notify.All); err != nil {
 		log.Fatal(err)
 	}

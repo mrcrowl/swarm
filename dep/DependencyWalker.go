@@ -2,6 +2,7 @@ package dep
 
 import (
 	"fmt"
+	"gospm/systemjs"
 	"path/filepath"
 	"strings"
 )
@@ -59,23 +60,15 @@ func readDependencies(file *SourceFile) []*Import {
 		return nil
 	}
 
-	openPos := strings.Index(line, "[")
-	closePos := strings.LastIndex(line, "]")
-	if openPos < 0 || closePos < 0 || closePos == (openPos+1) {
-		return nil
-	}
-
-	dependencySlice := line[(openPos + 1):closePos]
-	dependencies := strings.Split(dependencySlice, ", ")
+	dependencies := systemjs.ParseRegisterDependencies(line)
 	filteredDeps := make([]*Import, 0, len(dependencies))
-	for _, quotedDependency := range dependencies {
-		trimmedDepPath := strings.Trim(quotedDependency, "\"")
-		ext := filepath.Ext(trimmedDepPath)
+	for _, dependencyImportPath := range dependencies {
+		ext := filepath.Ext(dependencyImportPath)
 		if ext == "" {
-			dependencyImport := newImport(trimmedDepPath)
+			dependencyImport := newImport(dependencyImportPath)
 			filteredDeps = append(filteredDeps, dependencyImport)
 		} else {
-			println("EXT-MIX: " + trimmedDepPath)
+			println("EXT-MIX: " + dependencyImportPath)
 		}
 	}
 

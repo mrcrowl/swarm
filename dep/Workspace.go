@@ -17,6 +17,11 @@ func NewWorkspace(rootPath string) *Workspace {
 	}
 }
 
+// RootPath returns the workspace's root path
+func (ws *Workspace) RootPath() string {
+	return ws.rootPath
+}
+
 func (ws *Workspace) readSourceFile(rootRelativeFilepath string) (*SourceFile, error) {
 	exists := false
 	absoluteFilePath := ""
