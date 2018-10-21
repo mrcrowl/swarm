@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"gospm/dep"
+	"gospm/source"
 	"log"
 	"path/filepath"
 
@@ -10,16 +10,16 @@ import (
 
 // Monitor is used to recursively watch for file changes within a workspace
 type Monitor struct {
-	workspace *dep.Workspace
+	workspace *source.Workspace
 	channel   chan notify.EventInfo
 }
 
 // NewMonitor creates a new Monitor
-func NewMonitor(workspace *dep.Workspace) *Monitor {
+func NewMonitor(workspace *source.Workspace) *Monitor {
 	channel := make(chan notify.EventInfo, 2048)
 
-	rootRecursivePattern := filepath.Join(workspace.RootPath(), "./...")
-	if err := notify.Watch(rootRecursivePattern, channel, notify.All); err != nil {
+	rootPathRecursive := filepath.Join(workspace.RootPath(), "./...")
+	if err := notify.Watch(rootPathRecursive, channel, (notify.Write | notify.Remove)); err != nil {
 		log.Fatal(err)
 	}
 
