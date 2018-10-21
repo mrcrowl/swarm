@@ -19,6 +19,8 @@ const app = folder + "\\app\\src\\ep\\app.js"
 const appmoved = folder + "\\app\\src\\ep\\app-moved.js"
 
 func main() {
+	log.SetOutput(os.Stdout)
+
 	// HACK
 	if _, err := os.Stat(appmoved); err == nil {
 		os.Remove(app)

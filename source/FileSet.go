@@ -131,7 +131,11 @@ func (fs *FileSet) nonEmpty() bool {
 
 func (fs *FileSet) calcBundleOrder() []string {
 	graph := newIDGraph(fs.links)
-	topoSortedIDs, _ := graph.sortTopologically(fs.sortedFileIDs())
+	topoSortedIDs := graph.sortTopologically(fs.sortedFileIDs())
+	// if len(leftOverIDs) > 0 {
+	// 	graph.analyseLeftoverIDs(leftOverIDs)
+	// }
+
 	return topoSortedIDs
 }
 
@@ -153,15 +157,4 @@ func (fs *FileSet) copyLinks() map[string][]string {
 		clone[k] = append([]string(nil), v...)
 	}
 	return clone
-}
-
-func (fs *FileSet) indepdentFileIDs() stringStack {
-	independentIDs := make([]string, 0, 256)
-	for k := range fs.index {
-		dependencies := fs.links[k]
-		if len(dependencies) == 0 {
-			independentIDs = append(independentIDs, k)
-		}
-	}
-	return independentIDs
 }

@@ -1,14 +1,19 @@
 package source
 
+import (
+	"log"
+	"strings"
+)
+
 // IDGraph is used for sorting topologically
 type IDGraph struct {
-	edges        map[string][]string
-	reverseEdges map[string][]string
+	egressEdges  map[string][]string
+	ingressEdges map[string][]string
 }
 
 func newIDGraph(links map[string][]string) *IDGraph {
-	edges := make(map[string][]string)
-	reverseEdges := make(map[string][]string)
+	egressEdges := make(map[string][]string)
+	ingressEdges := make(map[string][]string)
 
 	add := func(m map[string][]string, from string, to string) {
 		if froms, found := m[from]; found {
@@ -20,73 +25,202 @@ func newIDGraph(links map[string][]string) *IDGraph {
 
 	for id, dependencyIDs := range links {
 		for _, did := range dependencyIDs {
-			add(edges, id, did)
-			add(reverseEdges, did, id)
+			add(egressEdges, id, did)
+			add(ingressEdges, did, id)
 		}
 	}
 
-	return &IDGraph{edges, reverseEdges}
+	return &IDGraph{egressEdges, ingressEdges}
 }
 
-func (graph *IDGraph) sortTopologically(ids []string) ([]string, []string) {
+func (graph *IDGraph) sortTopologically(ids []string) []string {
 	sortedIDs := make([]string, 0, len(ids))
+
 	independentIDs := graph.identifyIndependentIDs(ids)
 	dependentIDs := makeHashset(ids)
-	dependentIDs.removeAll(independentIDs)
+	dependentIDs.removeAll(independentIDs.stack)
 
-	var indieID string
-	for independentIDs.nonEmpty() {
-		independentIDs, indieID = independentIDs.pop()
-		sortedIDs = append(sortedIDs, indieID)
+	for independentIDs.nonEmpty() || dependentIDs.nonEmpty() {
+		for independentIDs.nonEmpty() {
+			indieID := independentIDs.pop()
+			log.Printf("Handling indie ID: %s", indieID)
+			sortedIDs = append(sortedIDs, indieID)
 
-		for _, dependentID := range graph.reverseEdges[indieID] {
-			graph.removeDependentID(dependentID, indieID)
-			if len(graph.edges[dependentID]) == 0 {
-				dependentIDs.remove(dependentID)
-				independentIDs = independentIDs.push(dependentID)
+			for _, dependentID := range graph.ingressEdges[indieID] {
+				graph.removeDependentID(dependentID, indieID)
+				if len(graph.egressEdges[dependentID]) == 0 {
+					dependentIDs.remove(dependentID)
+					independentIDs.push(dependentID)
+				}
 			}
 		}
+
+		if dependentIDs.nonEmpty() {
+			tributeID := dependentIDs.first()
+			graph.breakCycle(tributeID)
+
+			independentIDs = graph.identifyIndependentIDs(dependentIDs.ids())
+			dependentIDs.removeAll(independentIDs.stack)
+		}
 	}
-	return sortedIDs, dependentIDs.ids()
+	return sortedIDs
 }
 
 func (graph *IDGraph) removeDependentID(dependentID string, targetID string) {
-	dependencies := graph.edges[dependentID]
+	dependencies := graph.egressEdges[dependentID]
 	for i, dependencyID := range dependencies {
 		if dependencyID == targetID {
 			dependencies[i] = dependencies[len(dependencies)-1]
-			graph.edges[dependentID] = dependencies[:len(dependencies)-1]
-			return
+			graph.egressEdges[dependentID] = dependencies[:len(dependencies)-1]
+			break
+		}
+	}
+
+	reverseDependencies := graph.ingressEdges[targetID]
+	for j, reverseDependencyID := range reverseDependencies {
+		if reverseDependencyID == dependentID {
+			reverseDependencies[j] = reverseDependencies[len(reverseDependencies)-1]
+			graph.ingressEdges[targetID] = reverseDependencies[:len(reverseDependencies)-1]
+			break
 		}
 	}
 }
 
-func (graph *IDGraph) identifyIndependentIDs(ids []string) stringStack {
+func (graph *IDGraph) identifyIndependentIDs(ids []string) *stringStack {
 	independentIDs := make([]string, 0, 256)
 	for _, id := range ids {
-		dependencies := graph.edges[id]
+		dependencies := graph.egressEdges[id]
 		if len(dependencies) == 0 {
 			independentIDs = append(independentIDs, id)
 		}
 	}
-	return independentIDs
+	return newStringStack(independentIDs)
+}
+
+func (graph *IDGraph) breakCycles(ids []string) {
+	for _, id := range ids {
+		graph.breakCycle(id)
+	}
+}
+
+func (graph *IDGraph) breakCycle(id string) {
+	log.Printf("BEGINNING: breakCycle")
+	visited := make(map[string]bool)
+
+	var recurse func(string, int) bool
+	recurse = func(idcurr string, depth int) bool {
+		indent := strings.Repeat("\t", depth)
+		log.Printf("%sVisiting %s", indent, idcurr)
+		visited[idcurr] = true
+		dependencyIDs := graph.egressEdges[idcurr]
+
+		for _, depID := range dependencyIDs {
+			if visited[depID] {
+				log.Printf("Breaking cycle: %s --> %s", idcurr, depID)
+				graph.removeDependentID(idcurr, depID)
+				return false
+			} else {
+				if !recurse(depID, depth+1) {
+					return false
+				}
+			}
+		}
+		delete(visited, idcurr)
+		log.Printf("%sLeaving %s", indent, idcurr)
+		return true
+	}
+
+	recurse(id, 0)
+
+	log.Printf("ENDING: breakCycle")
+	return
+}
+
+func (graph *IDGraph) analyseLeftoverIDs(ids []string) {
+	for _, id := range ids {
+		graph.analyseForCycles(id)
+	}
+}
+
+func (graph *IDGraph) analyseForCycles(id string) {
+	cycles := make([]cyclePath, 0, 32)
+	path := make(cyclePath, 0, 32)
+	var recurse func(string)
+	recurse = func(idcurr string) {
+		path = append(path, idcurr)
+		dependencyIDs := graph.egressEdges[idcurr]
+
+		for _, depID := range dependencyIDs {
+			seenIndex := path.seenIndex(depID)
+			if seenIndex >= 0 {
+				path = append(path, depID)
+				pathCopy := append(cyclePath(nil), path[seenIndex:]...)
+				cycles = append(cycles, pathCopy)
+				path = path[:len(path)-1]
+				continue
+			}
+			recurse(depID)
+		}
+		path = path[:len(path)-1]
+	}
+
+	recurse(id)
+
+	displayCycle := func(cycle cyclePath) string {
+		return strings.Join(cycle, " --> ")
+	}
+
+	if len(cycles) > 0 {
+		for _, c := range cycles {
+			log.Println(displayCycle(c))
+		}
+	}
+}
+
+///////////////
+
+type cyclePath []string
+
+func (path cyclePath) seenIndex(id string) int {
+	for i, seenID := range path {
+		if seenID == id {
+			return i
+		}
+	}
+	return -1
 }
 
 /////////////////
 
-type stringStack []string
-
-func (s stringStack) nonEmpty() bool {
-	return len(s) > 0
+type stringStack struct {
+	stack []string
+	index map[string]bool
 }
 
-func (s stringStack) push(value string) stringStack {
-	return append(s, value)
+func newStringStack(values []string) *stringStack {
+	index := make(map[string]bool)
+	for _, v := range values {
+		index[v] = true
+	}
+	return &stringStack{values, index}
 }
 
-func (s stringStack) pop() (stringStack, string) {
-	l := len(s)
-	return s[:l-1], s[l-1]
+func (s *stringStack) nonEmpty() bool {
+	return len(s.stack) > 0
+}
+
+func (s *stringStack) push(value string) {
+	if _, found := s.index[value]; !found {
+		s.stack = append(s.stack, value)
+	}
+}
+
+func (s *stringStack) pop() string {
+	l := len(s.stack)
+	value := s.stack[l-1]
+	s.stack = s.stack[:l-1]
+	delete(s.index, value)
+	return value
 }
 
 /////////////////
@@ -99,6 +233,20 @@ func makeHashset(ids []string) stringHashset {
 		hashset[id] = true
 	}
 	return hashset
+}
+
+func (shs stringHashset) nonEmpty() bool {
+	return len(shs) > 0
+}
+
+func (shs stringHashset) first() string {
+	if shs.nonEmpty() {
+		for k := range shs {
+			return k
+		}
+	}
+
+	return ""
 }
 
 func (shs stringHashset) removeAll(ids []string) {

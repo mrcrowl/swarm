@@ -13,7 +13,14 @@ func TestIDGraph(t *testing.T) {
 		"c": []string{"d"},
 	}
 	g := newIDGraph(links)
-	topoOrder, leftOvers := g.sortTopologically([]string{"a", "b", "c", "d"})
+	topoOrder := g.sortTopologically([]string{"a", "b", "c", "d"})
 	assert.True(t, assert.ObjectsAreEqual([]string{"d", "c", "b", "a"}, topoOrder))
-	assert.Empty(t, leftOvers)
+}
+
+func TestStringStack(t *testing.T) {
+	ss := newStringStack([]string{"a", "b", "c"})
+	c := ss.pop()
+	assert.Equal(t, "c", c)
+	b := ss.pop()
+	assert.Equal(t, "b", b)
 }
