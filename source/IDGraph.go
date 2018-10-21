@@ -43,7 +43,7 @@ func (graph *IDGraph) sortTopologically(ids []string) []string {
 	for independentIDs.nonEmpty() || dependentIDs.nonEmpty() {
 		for independentIDs.nonEmpty() {
 			indieID := independentIDs.pop()
-			log.Printf("Handling indie ID: %s", indieID)
+			// log.Printf("Handling indie ID: %s", indieID)
 			sortedIDs = append(sortedIDs, indieID)
 
 			for _, dependentID := range graph.ingressEdges[indieID] {
@@ -104,19 +104,19 @@ func (graph *IDGraph) breakCycles(ids []string) {
 }
 
 func (graph *IDGraph) breakCycle(id string) {
-	log.Printf("BEGINNING: breakCycle")
+	// log.Printf("BEGINNING: breakCycle")
 	visited := make(map[string]bool)
 
 	var recurse func(string, int) bool
 	recurse = func(idcurr string, depth int) bool {
-		indent := strings.Repeat("\t", depth)
-		log.Printf("%sVisiting %s", indent, idcurr)
+		// indent := strings.Repeat("\t", depth)
+		// log.Printf("%sVisiting %s", indent, idcurr)
 		visited[idcurr] = true
 		dependencyIDs := graph.egressEdges[idcurr]
 
 		for _, depID := range dependencyIDs {
 			if visited[depID] {
-				log.Printf("Breaking cycle: %s --> %s", idcurr, depID)
+				// log.Printf("Breaking cycle: %s --> %s", idcurr, depID)
 				graph.removeDependentID(idcurr, depID)
 				return false
 			} else {
@@ -126,13 +126,13 @@ func (graph *IDGraph) breakCycle(id string) {
 			}
 		}
 		delete(visited, idcurr)
-		log.Printf("%sLeaving %s", indent, idcurr)
+		// log.Printf("%sLeaving %s", indent, idcurr)
 		return true
 	}
 
 	recurse(id, 0)
 
-	log.Printf("ENDING: breakCycle")
+	// log.Printf("ENDING: breakCycle")
 	return
 }
 
