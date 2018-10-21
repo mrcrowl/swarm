@@ -1,10 +1,10 @@
 package dep
 
 import (
-	"gospm/io"
-	"gospm/source"
 	"log"
 	"strings"
+	"swarm/io"
+	"swarm/source"
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file

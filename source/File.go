@@ -1,8 +1,8 @@
 package source
 
 import (
-	"gospm/io"
 	"path/filepath"
+	"swarm/io"
 )
 
 // File represents a single file containing source code

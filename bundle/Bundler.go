@@ -1,8 +1,8 @@
 package bundle
 
 import (
-	"gospm/source"
 	"strings"
+	"swarm/source"
 )
 
 // Bundler is

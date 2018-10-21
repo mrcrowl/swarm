@@ -1,14 +1,14 @@
 package main
 
 import (
-	"gospm/bundle"
-	"gospm/dep"
-	"gospm/monitor"
-	"gospm/source"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"swarm/bundle"
+	"swarm/dep"
+	"swarm/monitor"
+	"swarm/source"
 	"syscall"
 )
 

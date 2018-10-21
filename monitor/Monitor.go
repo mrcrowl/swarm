@@ -1,9 +1,9 @@
 package monitor
 
 import (
-	"gospm/source"
 	"log"
 	"path/filepath"
+	"swarm/source"
 	"time"
 
 	"github.com/rjeczalik/notify"

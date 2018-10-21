@@ -1,6 +1,6 @@
 package dep
 
-import "gospm/source"
+import "swarm/source"
 
 // importQueue represents a queue of dependencies to process
 type importQueue struct {

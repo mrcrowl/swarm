@@ -1,7 +1,7 @@
 package dep
 
 import (
-	"gospm/source"
+	"swarm/source"
 	"testing"
 	// "github.com/stretchr/testify/assert"
 )
