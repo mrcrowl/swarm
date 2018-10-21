@@ -13,16 +13,23 @@ import (
 
 func main() {
 	ws := source.NewWorkspace("c:\\wf\\lp\\web\\App")
+	// ws := source.NewWorkspace("c:\\wf\\home\\topo\\")
+	// fileset := source.NewEmptyFileSet()
 	fileset := dep.BuildFileSet(ws, "app/src/ep/app")
 
 	mon := monitor.NewMonitor(ws)
-	go mon.NotifyOnChanges(func(_ *monitor.EventChangeset) {
-		log.Println("Bundling...")
+
+	makeBundle := func(_ *monitor.EventChangeset) {
+		log.Print("Bundling...")
 		bundler := bundle.NewBundler()
 		bundler.Bundle(fileset)
-	})
+		log.Println("Done")
+	}
 
-	waitForExit()
+	go mon.NotifyOnChanges(makeBundle)
+	makeBundle(nil)
+
+	// waitForExit()
 }
 
 func waitForExit() {

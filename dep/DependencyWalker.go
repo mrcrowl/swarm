@@ -15,6 +15,11 @@ func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *so
 	return fileset
 }
 
+// UpdateFileset adds dependencies for an entry file to a FileSet
+// func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string) {
+// 	ws := fileset.Workspace()
+// }
+
 func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath string) ([]*source.Import, []*source.DependencyLink) {
 	queue := newImportQueue()
 	links := make([]*source.DependencyLink, 0, 2048)
@@ -78,7 +83,7 @@ func readDependencies(file *source.File) []*source.Import {
 	}
 
 	var filteredDeps []*source.Import
-	if dependencies, ok := source.ParseRegisterDependencies(line); ok {
+	if dependencies, ok := source.ParseRegisterDependencies(line, true); ok {
 		filteredDeps = make([]*source.Import, 0, len(dependencies))
 		for _, dependencyImportPath := range dependencies {
 			dependencyImport := source.NewImport(dependencyImportPath)

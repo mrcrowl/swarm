@@ -1,6 +1,7 @@
 package source
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,9 +32,9 @@ func TestParseGood(t *testing.T) {
 	elems, err := ParseSystemJSFormattedFile(source)
 	assert.Nil(t, err)
 	expectedImports := []string{
-		"tslib",
-		"../../../math/katex/KatexFacade",
-		"./FormulaInputRow",
+		`"tslib"`,
+		`"../../../math/katex/KatexFacade"`,
+		`"./FormulaInputRow"`,
 	}
 	assert.ElementsMatch(t, expectedImports, elems.imports)
 	assert.Equal(t, 19, len(elems.body))
@@ -105,4 +106,49 @@ func TestParseRegisterInvalidRegister2(t *testing.T) {
 	elems, err := ParseSystemJSFormattedFile(source)
 	assert.Nil(t, err)
 	assert.False(t, elems.isSystemJS)
+}
+
+func TestParseRegisterComments1(t *testing.T) {
+	source := `// some comment goes here
+// another comment
+System.register(["tslib"], function (exports_1, context_1) {
+}`
+	elems, err := ParseSystemJSFormattedFile(source)
+	assert.Nil(t, err)
+	assert.True(t, elems.isSystemJS)
+}
+
+func TestSkipPreamblePrefix(t *testing.T) {
+	source := `// comment 1
+// comment 2`
+
+	lines := strings.Split(source, "\n")
+	preamble, numLines := skipPreamble(lines)
+	assert.Len(t, preamble, 2)
+	assert.Equal(t, 2, numLines)
+}
+
+func TestSkipPreambleBlock(t *testing.T) {
+	source := `/* comment 1
+ comment 2
+ comment 3 */ 
+blah blah something else`
+
+	lines := strings.Split(source, "\n")
+	preamble, numLines := skipPreamble(lines)
+	assert.Len(t, preamble, 3)
+	assert.Equal(t, 3, numLines)
+}
+
+func TestSkipPreambleMixture(t *testing.T) {
+	source := `/* comment 1
+ comment 2
+ comment 3 */ 
+// another rand comment 4
+blah blah something else`
+
+	lines := strings.Split(source, "\n")
+	preamble, numLines := skipPreamble(lines)
+	assert.Len(t, preamble, 4)
+	assert.Equal(t, 4, numLines)
 }

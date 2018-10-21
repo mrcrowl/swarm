@@ -4,8 +4,9 @@ import "log"
 
 // FileSet is
 type FileSet struct {
-	index map[string]*File
-	links map[string][]string
+	index     map[string]*File
+	links     map[string][]string
+	workspace *Workspace
 }
 
 // NewEmptyFileSet creates an empty FileSet
@@ -36,6 +37,11 @@ func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace
 	}
 
 	return fs
+}
+
+// Workspace gets the workspace used by this Fileset
+func (fs *FileSet) Workspace() *Workspace {
+	return fs.workspace
 }
 
 // Files returns a list of all Files in the set

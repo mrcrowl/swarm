@@ -20,17 +20,21 @@ func ParseSystemJSFormattedFile(fileContents string) (*FileElements, error) {
 	var sourceMappingURL = ""
 	var foundSourceMap = false
 	var body []string
+	var preamble []string
+	var numPreambleLines int
 	if numLines > 0 {
-		registerLine := lines[0]
-		imports, foundRegister = ParseRegisterDependencies(registerLine)
+		preamble, numPreambleLines = skipPreamble(lines)
+		registerLine := lines[numPreambleLines]
+		imports, foundRegister = ParseRegisterDependencies(registerLine, false)
 
 		sourceMapLine := lines[numLines-1]
 		sourceMappingURL, foundSourceMap = parseSourceMappingURL(sourceMapLine)
 
-		body = chooseBodyLines(lines, foundSourceMap)
+		body = chooseBodyLines(lines, numPreambleLines, foundSourceMap)
 	}
 
 	return &FileElements{
+		preamble:         preamble,
 		imports:          imports,
 		body:             body,
 		sourceMappingURL: sourceMappingURL,
@@ -39,11 +43,39 @@ func ParseSystemJSFormattedFile(fileContents string) (*FileElements, error) {
 	}, nil
 }
 
-func chooseBodyLines(lines []string, foundSourceMap bool) []string {
-	if foundSourceMap {
-		return lines[:len(lines)-1]
+func skipPreamble(lines []string) ([]string, int) {
+	n := len(lines)
+	i := 0
+	inBlockComment := false
+	for ; i < n; i++ {
+		line := lines[i]
+		if strings.HasPrefix(line, "//") {
+			continue
+		}
+		if strings.HasPrefix(line, "/*") {
+			inBlockComment = true
+			continue
+		}
+		if inBlockComment {
+			if strings.Contains(line, "*/") {
+				inBlockComment = false
+			}
+			continue
+		}
+
+		break
 	}
-	return lines
+
+	preambleLines := lines[:i]
+
+	return preambleLines, i
+}
+
+func chooseBodyLines(lines []string, numPreambleLines int, foundSourceMap bool) []string {
+	if foundSourceMap {
+		return lines[numPreambleLines : len(lines)-1]
+	}
+	return lines[numPreambleLines:]
 }
 
 const sourceMappingURLPrefix = "//# sourceMappingURL="
@@ -59,7 +91,7 @@ func parseSourceMappingURL(line string) (string, bool) {
 const systemJSRegisterPrefix = "System.register(["
 
 // ParseRegisterDependencies parses the first line of a SystemJS formatted file and returns the import dependencies
-func ParseRegisterDependencies(line string) ([]string, bool) {
+func ParseRegisterDependencies(line string, trimQuotes bool) ([]string, bool) {
 	if !strings.HasPrefix(line, systemJSRegisterPrefix) {
 		return nil, false // not a register line
 	}
@@ -76,8 +108,10 @@ func ParseRegisterDependencies(line string) ([]string, bool) {
 
 	dependencySlice := line[(openPos + 1):closePos]
 	dependencies := strings.Split(dependencySlice, ", ")
-	for i, quotedDependency := range dependencies {
-		dependencies[i] = strings.Trim(quotedDependency, "\"")
+	if trimQuotes {
+		for i, quotedDependency := range dependencies {
+			dependencies[i] = strings.Trim(quotedDependency, "\"")
+		}
 	}
 
 	return dependencies, true // has imports

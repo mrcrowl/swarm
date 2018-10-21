@@ -39,3 +39,12 @@ func (file *File) Load() {
 func (file *File) Body() []string {
 	return file.elements.body
 }
+
+// BundleBody returns a list of lines from the body ready to include in a SystemJSBundle
+func (file *File) BundleBody() []string {
+	if file.elements.isSystemJS {
+		return file.elements.BundleBody(file.ID)
+	}
+
+	return file.elements.body
+}
