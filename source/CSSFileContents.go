@@ -23,7 +23,7 @@ const cssTemplate = `System.register("%s", [], function (_export, _context) {
 			injectCSS(css);
 		}
 	}
-};`
+});`
 
 // ParseCSSFileContents parses the lines of a CSS file into bundle-ready code
 func ParseCSSFileContents(name string, fileContents string) (*CSSFileContents, error) {

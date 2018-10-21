@@ -24,7 +24,7 @@ const template = `System.register("%s", [], function (_export, _context) {
 			_export("default", __useDefault);
 		}
 	}
-};`
+});`
 
 // ParseStringFileContents parses the lines of a SystemJS formatted file into the Elements
 func ParseStringFileContents(name string, fileContents string) (*StringFileContents, error) {

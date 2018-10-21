@@ -8,5 +8,5 @@ import (
 
 func TestFollowDependencyGraph(t *testing.T) {
 	var ws = source.NewWorkspace("C:\\WF\\LP\\web\\App")
-	followDependencyGraph(ws, "app\\src\\ep\\App.js")
+	followDependencyChain(ws, "app\\src\\ep\\App.js")
 }

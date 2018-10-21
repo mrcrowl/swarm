@@ -9,7 +9,7 @@ import (
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file
 func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *source.FileSet {
-	imports, links := followDependencyGraph(workspace, entryFileRelativePath)
+	imports, links := followDependencyChain(workspace, entryFileRelativePath)
 	fileset := source.NewFileSet(imports, links, workspace)
 
 	return fileset
@@ -20,7 +20,7 @@ func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *so
 // 	ws := fileset.Workspace()
 // }
 
-func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath string) ([]*source.Import, []*source.DependencyLink) {
+func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string) ([]*source.Import, []*source.DependencyLink) {
 	queue := newImportQueue()
 	links := make([]*source.DependencyLink, 0, 2048)
 

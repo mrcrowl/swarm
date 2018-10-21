@@ -68,8 +68,8 @@ func TestEnsureLoadedCSS(t *testing.T) {
 	f := getSampleFile("abcd", ".css", "body { background: green }")
 	f.EnsureLoaded()
 	assert.True(t, f.Loaded())
-	assert.IsType(t, &StringFileContents{}, f.contents)
-	assert.Len(t, f.BundleBody(), 13)
+	assert.IsType(t, &CSSFileContents{}, f.contents)
+	assert.Len(t, f.BundleBody(), 12)
 	teardown()
 }
 
