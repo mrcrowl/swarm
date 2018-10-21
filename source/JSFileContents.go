@@ -21,12 +21,7 @@ func (jsfc *JSFileContents) BundleLines() []string {
 
 // ParseJSFileContents parses the contents of a JS file
 func ParseJSFileContents(name string, fileContents string) (*JSFileContents, error) {
-	var lines []string
-	var err error
-
-	if lines, err = stringToLines(fileContents); err != nil {
-		return nil, err
-	}
+	lines := stringToLines(fileContents)
 
 	numLines := len(lines)
 	var imports []string

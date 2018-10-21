@@ -23,6 +23,11 @@ func newFile(id string, absoluteFilepath string) *File {
 	}
 }
 
+// Ext gets a file's extension
+func (file *File) Ext() string {
+	return file.ext
+}
+
 // Loaded gets whether a file's contents are loaded
 func (file *File) Loaded() bool {
 	return file.contents != nil
@@ -47,9 +52,13 @@ func (file *File) LoadContents() {
 	case ".js":
 		file.contents, err = ParseJSFileContents(file.ID, contents)
 	case ".css":
-		fallthrough
+		file.contents, err = ParseCSSFileContents(file.ID, contents)
 	default:
 		file.contents, err = ParseStringFileContents(file.ID, contents)
+	}
+
+	if file.contents == nil {
+		panic("ah!")
 	}
 }
 

@@ -72,3 +72,10 @@ func TestEnsureLoadedCSS(t *testing.T) {
 	assert.Len(t, f.BundleBody(), 13)
 	teardown()
 }
+
+func TestExt(t *testing.T) {
+	setup()
+	f := getSampleFile("abcd", ".css", "body { background: green }")
+	assert.Equal(t, ".css", f.Ext())
+	teardown()
+}

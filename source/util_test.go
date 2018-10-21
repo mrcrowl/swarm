@@ -1,6 +1,7 @@
 package source
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,5 +13,33 @@ func TestJsonEncodeString(t *testing.T) {
 "ijkl"`
 
 	encoded := jsonEncodeString(source)
-	assert.Equal(t, `"\u003cabcd\u003e\n'efgh'\n\"ijkl\""`, encoded)
+	assert.Equal(t, `"<abcd>\n'efgh'\n\"ijkl\""`, encoded)
+}
+
+func TestCountLines(t *testing.T) {
+	source := "abcd\nefgh"
+	count, err := countLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, count)
+}
+
+func TestCountLinesWindows(t *testing.T) {
+	source := "abcd\r\nefgh"
+	count, err := countLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, count)
+}
+
+func TestCountLooooongLines(t *testing.T) {
+	bytes, _ := ioutil.ReadFile("c:\\wf\\lp\\web\\App\\node_modules\\systemjs\\dist\\system.js")
+	source := string(bytes)
+	count, err := countLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, count)
+}
+
+func TestStringToLines(t *testing.T) {
+	source := "abcd\nefgh"
+	lines := stringToLines(source)
+	assert.Equal(t, 2, len(lines))
 }

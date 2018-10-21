@@ -28,16 +28,9 @@ const template = `System.register("%s", [], function (_export, _context) {
 
 // ParseStringFileContents parses the lines of a SystemJS formatted file into the Elements
 func ParseStringFileContents(name string, fileContents string) (*StringFileContents, error) {
-
 	encodedFile := jsonEncodeString(fileContents)
 
 	body := fmt.Sprintf(template, name, encodedFile)
-
-	var lines []string
-	var err error
-	if lines, err = stringToLines(body); err != nil {
-		return nil, err
-	}
-
+	lines := stringToLines(body)
 	return &StringFileContents{lines}, nil
 }

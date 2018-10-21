@@ -20,6 +20,9 @@ func NewBundler() *Bundler {
 func (b *Bundler) Bundle(fileset *source.FileSet) {
 	var sb strings.Builder
 	for _, file := range fileset.Files() {
+		if file.Ext() == ".css" || file.Ext() == ".html" {
+			continue
+		}
 		file.EnsureLoaded()
 		for _, line := range file.BundleBody() {
 			sb.WriteString(line)
