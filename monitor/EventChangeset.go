@@ -30,6 +30,14 @@ func (ec *EventChangeset) Add(event notify.Event, path string) bool {
 	return false
 }
 
+func (ec *EventChangeset) count() int {
+	return len(ec.changeIndex)
+}
+
+func (ec *EventChangeset) nonEmpty() bool {
+	return ec.count() > 0
+}
+
 func makeEventKey(event notify.Event, path string) string {
 	return eventToString(event) + ":" + path
 }

@@ -4,6 +4,7 @@ import (
 	"gospm/source"
 	"log"
 	"path/filepath"
+	"time"
 
 	"github.com/rjeczalik/notify"
 )
@@ -29,9 +30,30 @@ func NewMonitor(workspace *source.Workspace) *Monitor {
 	}
 }
 
-// C returns the channel which notifies about events
-func (mon *Monitor) C() chan notify.EventInfo {
-	return mon.channel
+const notifyInterval = 10 * time.Minute
+const debounceInterval = 500 * time.Millisecond
+
+// NotifyOnChanges notifies when events occur (after debouncing)
+func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
+	debounceTimer := time.NewTimer(notifyInterval)
+	changeset := NewEventChangeset()
+
+	var e notify.EventInfo
+	for {
+		select {
+		case e = <-mon.channel:
+			// receive an event
+			changeset.Add(e.Event(), e.Path())
+			debounceTimer.Reset(debounceInterval)
+
+		case <-debounceTimer.C:
+			// debounce and fire callback
+			if changeset.nonEmpty() {
+				callback(changeset)
+			}
+			changeset = NewEventChangeset()
+		}
+	}
 }
 
 // Stop cancels the recursive watcher

@@ -3,25 +3,32 @@ package main
 import (
 	"gospm/bundle"
 	"gospm/dep"
+	"gospm/monitor"
 	"gospm/source"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
 	ws := source.NewWorkspace("c:\\wf\\lp\\web\\App")
 	fileset := dep.BuildFileSet(ws, "app/src/ep/app")
 
-	log.Println(fileset.Count())
+	mon := monitor.NewMonitor(ws)
+	go mon.NotifyOnChanges(func(_ *monitor.EventChangeset) {
+		log.Println("Bundling...")
+		bundler := bundle.NewBundler()
+		bundler.Bundle(fileset)
+	})
 
-	bundler := bundle.NewBundler()
-	bundler.Bundle(fileset)
+	waitForExit()
 }
 
-func monitor() {
-	// wsw := dep.NewWorkspaceWatcher(ws)
+func waitForExit() {
+	exitSignal := make(chan os.Signal)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
 
-	// for {
-	// 	eventInfo := <-wsw.C()
-	// 	log.Println("Got event: ", eventInfo)
-	// }
+	// systemTeardown()
 }

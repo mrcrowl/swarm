@@ -58,3 +58,9 @@ func TestCompositeEvent(t *testing.T) {
 	assert.True(t, isCompositeEvent(17))
 	assert.True(t, isCompositeEvent(2052))
 }
+
+func TestNonEmpty(t *testing.T) {
+	sut := NewEventChangeset()
+	sut.Add(notify.Create, "abcd/efgh")
+	assert.True(t, sut.nonEmpty())
+}
