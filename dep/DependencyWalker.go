@@ -43,17 +43,13 @@ func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath st
 		var dependencyIDs []string
 		for _, dep := range readDependencies(file) {
 			if dep.IsSolo {
-				// if val, ok := nonrels[dep.Path()]; ok {
-				// 	nonrels[dep.Path()] = val + 1
-				// } else {
-				// 	nonrels[dep.Path()] = 1
-				// }
-			} else {
-				depRootRelative := imp.ToRootRelativeImport(dep)
-				queue.push(depRootRelative)
-
-				dependencyIDs = append(dependencyIDs, depRootRelative.Path())
+				continue
 			}
+
+			depRootRelative := imp.ToRootRelativeImport(dep)
+			queue.push(depRootRelative)
+
+			dependencyIDs = append(dependencyIDs, depRootRelative.Path())
 		}
 
 		if len(dependencyIDs) > 0 {
@@ -67,10 +63,6 @@ func followDependencyGraph(workspace *source.Workspace, entryFileRelativePath st
 			follow(relativePath)
 		}
 	}
-
-	// for k, v := range nonrels {
-	// fmt.Printf("NON-REL: %s --> %d\n", k, v)
-	// }
 
 	return queue.outputImports(), links
 }

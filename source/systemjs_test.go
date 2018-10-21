@@ -29,7 +29,7 @@ func TestParseGood(t *testing.T) {
 });
 //# sourceMappingURL=TouchFormulaInputRow.js.map`
 
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	expectedImports := []string{
 		`"tslib"`,
@@ -47,7 +47,7 @@ func TestParseWrongFileType(t *testing.T) {
 	Hello, world.
 </div>`
 
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, []string{}, elems.imports)
 	assert.Equal(t, 3, len(elems.body))
@@ -62,7 +62,7 @@ func TestParseSourceMapOnly(t *testing.T) {
 </div>
 //# sourceMappingURL=blah.xml`
 
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, []string{}, elems.imports)
 	assert.Equal(t, 3, len(elems.body))
@@ -75,7 +75,7 @@ func TestParseRegisterOnly(t *testing.T) {
 	source := `System.register(["tslib"], function (exports_1, context_1) {
 }`
 
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(elems.imports))
 	assert.Equal(t, 2, len(elems.body))
@@ -87,7 +87,7 @@ func TestParseRegisterNoImports(t *testing.T) {
 	source := `System.register([], function (exports_1, context_1) {
 }`
 
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(elems.imports))
 }
@@ -95,7 +95,7 @@ func TestParseRegisterNoImports(t *testing.T) {
 func TestParseRegisterInvalidRegister(t *testing.T) {
 	source := `System.register(][, function (exports_1, context_1) {
 }`
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.False(t, elems.isSystemJS)
 }
@@ -103,7 +103,7 @@ func TestParseRegisterInvalidRegister(t *testing.T) {
 func TestParseRegisterInvalidRegister2(t *testing.T) {
 	source := `System.register([, function (exports_1, context_1) {
 }`
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.False(t, elems.isSystemJS)
 }
@@ -113,7 +113,7 @@ func TestParseRegisterComments1(t *testing.T) {
 // another comment
 System.register(["tslib"], function (exports_1, context_1) {
 }`
-	elems, err := ParseSystemJSFormattedFile(source)
+	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.True(t, elems.isSystemJS)
 }

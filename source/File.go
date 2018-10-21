@@ -2,49 +2,58 @@ package source
 
 import (
 	"gospm/io"
+	"path/filepath"
 )
 
 // File represents a single file containing source code
 type File struct {
 	ID       string
 	Filepath string
-	elements *FileElements
+	ext      string
+	contents FileContents
 }
 
 // newFile creates a new SourceFile
 func newFile(id string, absoluteFilepath string) *File {
+	ext := filepath.Ext(absoluteFilepath)
 	return &File{
 		ID:       id,
 		Filepath: absoluteFilepath,
+		ext:      ext,
 	}
+}
+
+// Loaded gets whether a file's contents are loaded
+func (file *File) Loaded() bool {
+	return file.contents != nil
 }
 
 // EnsureLoaded ensures that the Load method has been called for this File instance
 func (file *File) EnsureLoaded() {
-	if file.elements == nil {
-		file.Load()
+	if !file.Loaded() {
+		file.LoadContents()
 	}
 }
 
-// Load loads a file from disk and parses the contents
-func (file *File) Load() {
+// LoadContents loads a file's contents from disk and prepares them for bundling
+func (file *File) LoadContents() {
 	contents, err := io.ReadContents(file.Filepath)
 	if err != nil {
-		file.elements = FailedFileElements()
+		file.contents = &FailedFileContents{}
+		return
 	}
-	file.elements, err = ParseSystemJSFormattedFile(contents)
-}
 
-// Body returns a list of lines representing the body of the file
-func (file *File) Body() []string {
-	return file.elements.body
+	switch file.ext {
+	case ".js":
+		file.contents, err = ParseJSFileContents(file.ID, contents)
+	case ".css":
+		fallthrough
+	default:
+		file.contents, err = ParseStringFileContents(file.ID, contents)
+	}
 }
 
 // BundleBody returns a list of lines from the body ready to include in a SystemJSBundle
 func (file *File) BundleBody() []string {
-	if file.elements.isSystemJS {
-		return file.elements.BundleBody(file.ID)
-	}
-
-	return file.elements.body
+	return file.contents.BundleLines()
 }
