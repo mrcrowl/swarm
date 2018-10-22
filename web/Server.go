@@ -9,14 +9,16 @@ import (
 
 // Server is the state of the web server
 type Server struct {
-	server   *http.Server
+	srv      *http.Server
 	rootPath string
 	port     uint16
+	handlers map[string]http.HandlerFunc
 }
 
 // ServerOptions specifies the parameters for the web server
 type ServerOptions struct {
-	Port uint16
+	Port     uint16
+	Handlers map[string]http.HandlerFunc
 }
 
 var stateInstance *Server
@@ -24,8 +26,8 @@ var stateInstance *Server
 // DefaultPort will be automatically assigned, if no port is specified in the options
 const DefaultPort = uint16(8080)
 
-// StartServer returns a started webserver
-func StartServer(rootPath string, opts *ServerOptions) *Server {
+// CreateServer returns a started webserver
+func CreateServer(rootPath string, opts *ServerOptions) *Server {
 	if stateInstance != nil {
 		return stateInstance
 	}
@@ -36,28 +38,36 @@ func StartServer(rootPath string, opts *ServerOptions) *Server {
 	}
 
 	stateInstance = &Server{
-		server:   nil,
+		srv:      nil,
 		rootPath: rootPath,
 		port:     port,
+		handlers: opts.Handlers,
 	}
 
-	stateInstance.start()
 	return stateInstance
 }
 
-// start the web server
-func (state *Server) start() {
+// Start the web server
+func (server *Server) Start() {
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(state.rootPath)))
+	mux.Handle("/", http.FileServer(http.Dir(server.rootPath)))
+	for url, handler := range server.handlers {
+		mux.HandleFunc(url, handler)
+	}
 
-	state.server = &http.Server{
-		Addr:    makeServerAddress(state.port),
+	server.srv = &http.Server{
+		Addr:    makeServerAddress(server.port),
 		Handler: mux,
 	}
 
-	if err := state.server.ListenAndServe(); err != nil {
+	if err := server.srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
+}
+
+// Port gets the port number for this server
+func (server *Server) Port() uint16 {
+	return server.port
 }
 
 func makeServerAddress(port uint16) string {
@@ -65,11 +75,11 @@ func makeServerAddress(port uint16) string {
 }
 
 // Stop the web server
-func (state *Server) Stop() {
+func (server *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if cancel != nil {
-		state.server.Shutdown(ctx)
-		state.server = nil
+		server.srv.Shutdown(ctx)
+		server.srv = nil
 		stateInstance = nil
 	}
 }

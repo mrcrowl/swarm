@@ -1,51 +1,69 @@
 package main
 
 import (
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
+	"swarm/bundle"
+	"swarm/dep"
+	"swarm/monitor"
+	"swarm/source"
 	"swarm/web"
+	"sync"
 	"syscall"
+
+	"github.com/rjeczalik/notify"
 )
 
 const folder = "c:\\wf\\lp\\web\\App"
 
-// const folder = "c:\\wf\\home\\topo"
-// const app = folder + "\\app\\src\\ep\\app.js"
-const app = "c:\\app-bundle.js"
-const appmoved = folder + "\\app\\src\\ep\\app-moved.js"
+const app = folder + "\\app\\src\\ep\\app.js"
 
 func main() {
 	log.SetOutput(os.Stdout)
 
-	// HACK
-	if _, err := os.Stat(appmoved); err == nil {
-		os.Remove(app)
-		os.Rename(appmoved, app)
+	ws := source.NewWorkspace(folder)
+	filterFn := func(event notify.Event, path string) bool {
+		if strings.HasSuffix(path, ".ts") {
+			return false
+		}
+		return true
 	}
-	// ENDHACK
+	mon := monitor.NewMonitor(ws, filterFn)
 
-	// ws := source.NewWorkspace(folder)
-	// ws := source.NewWorkspace("c:\\wf\\home\\topo\\")
-	// fileset := source.NewEmptyFileSet()
-	// fileset := dep.BuildFileSet(ws, "app/src/ep/app")
+	var appjs string
+	bundleMutex := &sync.Mutex{}
+	makeBundle := func(changeset *monitor.EventChangeset) {
+		fileset := dep.BuildFileSet(ws, "app/src/ep/app")
+		bundleMutex.Lock()
+		defer bundleMutex.Unlock()
 
-	// mon := monitor.NewMonitor(ws)
+		log.Print("Bundling...")
+		bundler := bundle.NewBundler()
+		sb := bundler.Bundle(fileset)
+		appjs = sb.String()
+		// ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
+		log.Println("Done")
+	}
 
-	// makeBundle := func(_ *monitor.EventChangeset) {
-	// 	log.Print("Bundling...")
-	// 	bundler := bundle.NewBundler()
-	// 	sb := bundler.Bundle(fileset)
-	// 	// os.Rename(app, appmoved)
-	// 	ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
-	// 	log.Println("Done")
-	// }
+	go mon.NotifyOnChanges(makeBundle)
+	makeBundle(nil)
 
-	// go mon.NotifyOnChanges(makeBundle)
-	// makeBundle(nil)
+	handlers := map[string]http.HandlerFunc{
+		"/app/src/ep/app.js": func(w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, appjs)
+		},
+	}
 
-	server := web.StartServer(folder, &web.ServerOptions{Port: 8096})
-	log.Println("Listening on http://localhost:8096")
+	server := web.CreateServer(folder, &web.ServerOptions{
+		Port:     8096,
+		Handlers: handlers,
+	})
+	go server.Start()
+	log.Printf("Listening on http://localhost:%d", server.Port())
 	waitForExit(server)
 }
 

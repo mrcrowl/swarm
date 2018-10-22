@@ -6,14 +6,21 @@ import (
 
 // EventChangeset is used to collect a set of events
 type EventChangeset struct {
-	changeIndex map[string]*Event
+	changeIndex map[string]bool
+	changes     []*Event
 }
 
 // NewEventChangeset creates a new EventChangeset
 func NewEventChangeset() *EventChangeset {
 	return &EventChangeset{
-		changeIndex: make(map[string]*Event),
+		changeIndex: make(map[string]bool),
+		changes:     nil,
 	}
+}
+
+// Changes get the list of changes that make up this
+func (ec *EventChangeset) Changes() []*Event {
+	return ec.changes
 }
 
 // Add adds a new event to the set
@@ -23,7 +30,9 @@ func (ec *EventChangeset) Add(event notify.Event, path string) bool {
 	}
 	key := makeEventKey(event, path)
 	if _, exists := ec.changeIndex[key]; !exists {
-		ec.changeIndex[key] = NewEvent(path, event)
+		ev := NewEvent(path, event)
+		ec.changes = append(ec.changes, ev)
+		ec.changeIndex[key] = true
 		return true
 	}
 

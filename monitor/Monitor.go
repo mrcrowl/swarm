@@ -9,14 +9,18 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
+// FilterFn is the shape of a function that can used as a filter for a Monitor
+type FilterFn func(notify.Event, string) bool
+
 // Monitor is used to recursively watch for file changes within a workspace
 type Monitor struct {
 	workspace *source.Workspace
 	channel   chan notify.EventInfo
+	filter    FilterFn
 }
 
 // NewMonitor creates a new Monitor
-func NewMonitor(workspace *source.Workspace) *Monitor {
+func NewMonitor(workspace *source.Workspace, filter FilterFn) *Monitor {
 	channel := make(chan notify.EventInfo, 2048)
 
 	rootPathRecursive := filepath.Join(workspace.RootPath(), "./...")
@@ -27,6 +31,7 @@ func NewMonitor(workspace *source.Workspace) *Monitor {
 	return &Monitor{
 		workspace,
 		channel,
+		filter,
 	}
 }
 
@@ -43,8 +48,12 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 		select {
 		case e = <-mon.channel:
 			// receive an event
-			changeset.Add(e.Event(), e.Path())
-			debounceTimer.Reset(debounceInterval)
+			event := e.Event()
+			path := e.Path()
+			if mon.filter == nil || mon.filter(event, path) {
+				changeset.Add(event, path)
+				debounceTimer.Reset(debounceInterval)
+			}
 
 		case <-debounceTimer.C:
 			// debounce and fire callback
