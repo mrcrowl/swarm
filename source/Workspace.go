@@ -3,6 +3,7 @@ package source
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Workspace is
@@ -10,11 +11,38 @@ type Workspace struct {
 	rootPath string
 }
 
+var explicitSep = os.PathSeparator
+
+func emulateUnix() {
+	explicitSep = '/'
+}
+
 // NewWorkspace returns a new workspace for the given rootpath
 func NewWorkspace(rootPath string) *Workspace {
 	return &Workspace{
-		rootPath,
+		rootPath: normaliseFilepath(rootPath, true),
 	}
+}
+
+func normaliseFilepath(filepath string, requireSuffix bool) string {
+	var normalisedFilepath string
+	if explicitSep == '/' {
+		normalisedFilepath = strings.Replace(filepath, "\\", "/", -1)
+	} else {
+		normalisedFilepath = strings.Replace(filepath, "/", "\\", -1)
+	}
+
+	if requireSuffix {
+		if !strings.HasSuffix(normalisedFilepath, string(explicitSep)) {
+			normalisedFilepath += string(explicitSep)
+		}
+	}
+
+	if explicitSep != os.PathSeparator {
+		explicitSep = os.PathSeparator
+	}
+
+	return normalisedFilepath
 }
 
 // RootPath returns the workspace's root path
@@ -40,4 +68,15 @@ func (ws *Workspace) ReadSourceFile(imp *Import) (*File, error) {
 	}
 
 	return nil, os.ErrNotExist
+}
+
+// ToRelativePath converts an absolute filepath to a root-relative path
+func (ws *Workspace) ToRelativePath(absoluteFilepath string) (string, bool) {
+	if strings.HasPrefix(absoluteFilepath, ws.rootPath) {
+		relativeFilepath := absoluteFilepath[len(ws.rootPath):]
+		relativePath := strings.Replace(relativeFilepath, "\\", "/", -1)
+		return relativePath, true
+	}
+
+	return "", false
 }
