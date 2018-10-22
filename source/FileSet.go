@@ -29,12 +29,12 @@ func NewEmptyFileSet(workspace *Workspace) *FileSet {
 // NewFileSet creates a new FileSet initialised with a series of imports and links
 func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace) *FileSet {
 	fs := NewEmptyFileSet(workspace)
-	fs.Ingest(imports, links)
+	fs.Ingest(imports, links, false)
 	return fs
 }
 
 // Ingest extends a FileSet with additional imports
-func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink) {
+func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink, replace bool) {
 	for _, imp := range imports {
 		file, err := fs.workspace.ReadSourceFile(imp)
 		if err != nil {
@@ -42,7 +42,11 @@ func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink) {
 			continue
 		}
 
-		fs.Add(file)
+		if replace {
+			fs.Replace(file)
+		} else {
+			fs.Add(file)
+		}
 	}
 
 	for _, link := range links {
@@ -50,17 +54,16 @@ func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink) {
 	}
 }
 
-// MarkDirty sets a fileset to dirty
-func (fs *FileSet) MarkDirty() {
-	fs.dirty = true
-}
-
 // Dirty gets a flag indicating whether the FileSet needs to be rebundled
-func (fs *FileSet) Dirty() bool {
-	return fs.dirty
-}
+func (fs *FileSet) Dirty() bool { return fs.dirty }
 
-// Workspace gets the workspace used by this Fileset
+// MarkDirty sets a FileSet to dirty
+func (fs *FileSet) MarkDirty() { fs.dirty = true }
+
+// ClearDirty clears a FileSet from being dirty
+func (fs *FileSet) ClearDirty() { fs.dirty = false }
+
+// Workspace gets the workspace used by this FileSet
 func (fs *FileSet) Workspace() *Workspace {
 	return fs.workspace
 }
@@ -84,14 +87,19 @@ func (fs *FileSet) Get(id string) *File /* may be nil */ {
 	return file
 }
 
-// Add adds a File to a FileSet
+// Add adds a File to a FileSet, if it doesn't already contain it
 func (fs *FileSet) Add(file *File) bool {
 	if fs.Contains(file.ID) {
 		return false
 	}
 
-	fs.index[file.ID] = file
+	fs.Replace(file)
 	return true
+}
+
+// Replace overwrites a File in a FileSet
+func (fs *FileSet) Replace(file *File) {
+	fs.index[file.ID] = file
 }
 
 // AddLink adds a DependencyLink between Files in a FileSet
@@ -111,7 +119,16 @@ func (fs *FileSet) AddLink(link *DependencyLink) bool {
 	fs.links[link.id] = link.dependencyIDs
 	for _, dependencyID := range link.dependencyIDs {
 		if rlinks, found := fs.reverseLinks[dependencyID]; found {
-			fs.reverseLinks[dependencyID] = append(rlinks, link.id)
+			foundLinkID := false
+			for _, rlink := range rlinks {
+				if rlink == link.id {
+					foundLinkID = true
+					break
+				}
+			}
+			if !foundLinkID {
+				fs.reverseLinks[dependencyID] = append(rlinks, link.id)
+			}
 		} else {
 			fs.reverseLinks[dependencyID] = []string{link.id}
 		}

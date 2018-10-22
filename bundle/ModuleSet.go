@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -121,11 +122,11 @@ type Module struct {
 
 // NewModule creates a new Module from a NormalisedModuleDescripion
 func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) *Module {
-	entryPoints := []string{descr.RelativePath}
+	entryPoints := append([]string(nil), descr.Include...)
 	return &Module{
 		description:       descr,
 		fileset:           source.NewEmptyFileSet(ws),
-		entryPoints:       append(entryPoints, descr.Include...),
+		entryPoints:       entryPoints,
 		excludedModules:   nil,
 		bundledJavascript: "",
 		bundler:           NewBundler(),
@@ -182,6 +183,8 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 
 func (mod *Module) generateArtefacts() {
 	mod.bundledJavascript = mod.bundler.Bundle(mod.fileset)
+	mod.fileset.ClearDirty()
+	fmt.Printf("   Bundled: /" + mod.PrimaryEntryPoint() + ".js\n")
 }
 
 func (mod *Module) links() []string {

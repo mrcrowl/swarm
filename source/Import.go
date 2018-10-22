@@ -61,7 +61,7 @@ func (imp *Import) Path() string {
 // ToRootRelativeImport converts a relative import to a root relative import, based on the current import (assuming it is root-relative itself)
 func (imp *Import) ToRootRelativeImport(relativeImport *Import) *Import {
 	if relativeImport.IsSolo {
-		return imp
+		return relativeImport
 	}
 
 	if imp.IsRooted {

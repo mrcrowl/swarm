@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 	"swarm/source"
@@ -36,7 +37,7 @@ func NewMonitor(workspace *source.Workspace, filter FilterFn) *Monitor {
 }
 
 const notifyInterval = 10 * time.Minute
-const debounceInterval = 500 * time.Millisecond
+const debounceInterval = 100 * time.Millisecond
 
 // NotifyOnChanges notifies when events occur (after debouncing)
 func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
@@ -44,6 +45,7 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 	changeset := NewEventChangeset()
 
 	var e notify.EventInfo
+	var start time.Time
 	for {
 		select {
 		case e = <-mon.channel:
@@ -51,6 +53,12 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 			event := e.Event()
 			path := e.Path()
 			if mon.filter == nil || mon.filter(event, path) {
+				if changeset.empty() {
+					start = time.Now()
+					fmt.Print("Change detected...")
+				} else {
+					fmt.Print(".")
+				}
 				changeset.Add(event, path)
 				debounceTimer.Reset(debounceInterval)
 			}
@@ -58,7 +66,13 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 		case <-debounceTimer.C:
 			// debounce and fire callback
 			if changeset.nonEmpty() {
+				fmt.Println("")
 				callback(changeset)
+				elapsed := time.Since(start)
+				fmt.Printf("...done in %s\n", elapsed)
+			} else {
+				fmt.Println("")
+				fmt.Println("...no changes")
 			}
 			changeset = NewEventChangeset()
 		}

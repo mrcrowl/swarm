@@ -43,6 +43,10 @@ func (ec *EventChangeset) count() int {
 	return len(ec.changeIndex)
 }
 
+func (ec *EventChangeset) empty() bool {
+	return ec.count() == 0
+}
+
 func (ec *EventChangeset) nonEmpty() bool {
 	return ec.count() > 0
 }
