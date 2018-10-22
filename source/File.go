@@ -62,6 +62,11 @@ func (file *File) LoadContents() {
 	}
 }
 
+// UnloadContents clears a file's contents
+func (file *File) UnloadContents() {
+	file.contents = nil
+}
+
 // BundleBody returns a list of lines from the body ready to include in a SystemJSBundle
 func (file *File) BundleBody() []string {
 	return file.contents.BundleLines()

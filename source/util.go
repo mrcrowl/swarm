@@ -52,7 +52,9 @@ func countLines(s string) (int, error) {
 
 		if err == io.EOF {
 			return count - 1, nil
-		} else if err != nil {
+		}
+
+		if err != nil {
 			return count, err
 		}
 	}

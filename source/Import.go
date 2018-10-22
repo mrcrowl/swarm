@@ -60,15 +60,17 @@ func (imp *Import) Path() string {
 
 // ToRootRelativeImport converts a relative import to a root relative import, based on the current import (assuming it is root-relative itself)
 func (imp *Import) ToRootRelativeImport(relativeImport *Import) *Import {
+	if relativeImport.IsSolo {
+		return imp
+	}
+
 	if imp.IsRooted {
 		if !relativeImport.IsRooted {
 			importPathRelativeToRoot := path.Join(imp.Directory, relativeImport.Path())
 			return NewImport(importPathRelativeToRoot)
 		}
-		log.Fatalf("toRootRelativeImportPath called with non-relative import: %s\n", relativeImport.Path())
-	} else {
-
+		log.Fatalf("Import.ToRootRelativeImport called with non-relative import: %s\n", relativeImport.Path())
 	}
-	log.Fatalf("toRootRelativeImportPath called on non-root-relative import: %s\n", imp.Path())
+	log.Fatalf("Import.ToRootRelativeImport called on non-root-relative import: %s\n", imp.Path())
 	return nil
 }

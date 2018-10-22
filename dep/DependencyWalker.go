@@ -2,32 +2,68 @@ package dep
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"swarm/io"
 	"swarm/source"
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file
-func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *source.FileSet {
-	imports, links := followDependencyChain(workspace, entryFileRelativePath)
+func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string, excludedFilesets []*source.FileSet) *source.FileSet {
+	imports, links := followDependencyChain(workspace, entryFileRelativePath, excludedFilesets)
 	fileset := source.NewFileSet(imports, links, workspace)
 
 	return fileset
 }
 
 // UpdateFileset adds dependencies for an entry file to a FileSet
-func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string) {
+func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, excludedFilesets []*source.FileSet) {
 	// ws := fileset.Workspace()
+	// assume the file has been touched, so:
+	// 2. update the dependencies (but include this fileset in the exclusions)
+
+	// 1. invalidate it's content
+	fileID := relativePathToID(modifiedFileRelativePath)
+	file := fileset.Get(fileID)
+	if file == nil {
+		return
+	}
+	file.UnloadContents()
+
+	imports, links := followDependencyChain(fileset.Workspace(), modifiedFileRelativePath, excludedFilesets)
+	fileset.Ingest(imports, links)
 }
 
-func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string) ([]*source.Import, []*source.DependencyLink) {
+func relativePathToID(relativePath string) string {
+	ext := path.Ext(relativePath)
+	if ext != "" {
+		return relativePath[:len(relativePath)-len(ext)]
+	}
+	return relativePath
+}
+
+func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string, excludedFilesets []*source.FileSet /* may be nil */) ([]*source.Import, []*source.DependencyLink) {
 	queue := newImportQueue()
 	links := make([]*source.DependencyLink, 0, 2048)
 
 	entryFileRelativePath = strings.Replace(entryFileRelativePath, "\\", "/", -1)
 	queue.pushPath(entryFileRelativePath)
 
-	// nonrels := make(map[string]int)
+	exclude := func(dep *source.Import) bool {
+		if dep.IsSolo {
+			return true
+		}
+
+		if excludedFilesets != nil {
+			path := dep.Path()
+			for _, exclFileset := range excludedFilesets {
+				if exclFileset.Contains(path) {
+					return true
+				}
+			}
+		}
+		return false
+	}
 
 	follow := func(imp *source.Import) {
 		var file *source.File
@@ -42,13 +78,13 @@ func followDependencyChain(workspace *source.Workspace, entryFileRelativePath st
 
 		var dependencyIDs []string
 		for _, dep := range readDependencies(file) {
-			if dep.IsSolo {
+			depRootRelative := imp.ToRootRelativeImport(dep)
+
+			if exclude(depRootRelative) {
 				continue
 			}
 
-			depRootRelative := imp.ToRootRelativeImport(dep)
 			queue.push(depRootRelative)
-
 			dependencyIDs = append(dependencyIDs, depRootRelative.Path())
 		}
 

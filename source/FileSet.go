@@ -27,9 +27,14 @@ func NewEmptyFileSet(workspace *Workspace) *FileSet {
 // NewFileSet creates a new FileSet initialised with a series of imports and links
 func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace) *FileSet {
 	fs := NewEmptyFileSet(workspace)
+	fs.Ingest(imports, links)
+	return fs
+}
 
+// Ingest extends a FileSet with additional imports
+func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink) {
 	for _, imp := range imports {
-		file, err := workspace.ReadSourceFile(imp)
+		file, err := fs.workspace.ReadSourceFile(imp)
 		if err != nil {
 			fmt.Printf("Could not read '%s'\n", imp.Path())
 			continue
@@ -41,8 +46,6 @@ func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace
 	for _, link := range links {
 		fs.AddLink(link)
 	}
-
-	return fs
 }
 
 // Workspace gets the workspace used by this Fileset
@@ -63,9 +66,15 @@ func (fs *FileSet) Files() []*File {
 	return result
 }
 
+// Get gets a File from the FileSet
+func (fs *FileSet) Get(id string) *File /* may be nil */ {
+	file := fs.index[id]
+	return file
+}
+
 // Add adds a File to a FileSet
 func (fs *FileSet) Add(file *File) bool {
-	if fs.contains(file.ID) {
+	if fs.Contains(file.ID) {
 		return false
 	}
 
@@ -75,13 +84,13 @@ func (fs *FileSet) Add(file *File) bool {
 
 // AddLink adds a DependencyLink between Files in a FileSet
 func (fs *FileSet) AddLink(link *DependencyLink) bool {
-	if !fs.contains(link.id) {
+	if !fs.Contains(link.id) {
 		fmt.Printf("ERROR: AddLink() dependent file doesn't exist in the FileSet, ID: %s\n", link.id)
 		return false
 	}
 
 	for _, dependencyID := range link.dependencyIDs {
-		if !fs.contains(dependencyID) {
+		if !fs.Contains(dependencyID) {
 			fmt.Printf("ERROR: AddLink() dependency file doesn't exist in the FileSet, ID: %s\n", dependencyID)
 			return false
 		}
@@ -100,11 +109,11 @@ func (fs *FileSet) AddLink(link *DependencyLink) bool {
 
 // contains tests whether a FileSet contains a file
 func (fs *FileSet) containsFile(file *File) bool {
-	return fs.contains(file.ID)
+	return fs.Contains(file.ID)
 }
 
-// contains tests whether a FileSet contains a file
-func (fs *FileSet) contains(id string) bool {
+// Contains tests whether a FileSet contains a file
+func (fs *FileSet) Contains(id string) bool {
 	if _, ok := fs.index[id]; ok {
 		return true
 	}

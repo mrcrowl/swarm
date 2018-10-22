@@ -16,12 +16,12 @@ func createWorkspace() *Workspace {
 
 func TestContains(t *testing.T) {
 	sut := NewEmptyFileSet(createWorkspace())
-	assert.False(t, sut.contains(ConfigAppID))
+	assert.False(t, sut.Contains(ConfigAppID))
 	file := newFile(ConfigAppID, ConfigApp)
 	sut.Add(file)
-	assert.True(t, sut.contains(ConfigAppID))
+	assert.True(t, sut.Contains(ConfigAppID))
 	assert.True(t, sut.containsFile(file))
-	assert.False(t, sut.contains("aksdjfhzzaksjdfh"))
+	assert.False(t, sut.Contains("aksdjfhzzaksjdfh"))
 	assert.Equal(t, 1, sut.Count())
 	assert.True(t, sut.nonEmpty())
 	assert.Equal(t, 0, sut.linkCount())

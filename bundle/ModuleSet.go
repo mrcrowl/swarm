@@ -14,6 +14,7 @@ import (
 // ModuleSet is
 type ModuleSet struct {
 	modules []*Module
+	mutex   *sync.Mutex
 }
 
 // CreateModuleSet creates a ModuleSet from a list of NormalisedModuleDescriptions
@@ -23,9 +24,13 @@ func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.Normalis
 		modules[i] = NewModule(ws, descr)
 	}
 
-	set := &ModuleSet{modules}
+	set := &ModuleSet{
+		modules: modules,
+		mutex:   &sync.Mutex{},
+	}
+
 	for _, mod := range set.modules {
-		mod.attachRelatedModules(set)
+		mod.attachExcludedModules(set)
 	}
 
 	set.sort()
@@ -39,6 +44,8 @@ func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.Normalis
 
 // AbsorbChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
 func (set *ModuleSet) AbsorbChanges(changes *monitor.EventChangeset) {
+	set.mutex.Lock()
+	defer set.mutex.Unlock()
 	start := time.Now()
 	for _, mod := range set.modules {
 		mod.absorbChanges(changes)
@@ -91,7 +98,6 @@ type Module struct {
 	excludedModules   []*Module
 	compiledArtefacts map[string]string
 	bundler           *Bundler
-	mutex             *sync.Mutex
 }
 
 // NewModule creates a new Module from a NormalisedModuleDescripion
@@ -104,7 +110,6 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) 
 		excludedModules:   nil,
 		compiledArtefacts: make(map[string]string),
 		bundler:           NewBundler(),
-		mutex:             &sync.Mutex{},
 	}
 }
 
@@ -118,10 +123,24 @@ func (mod *Module) PrimaryEntryPoint() string {
 	return mod.description.RelativePath
 }
 
+func (mod *Module) excludedFilesets() []*source.FileSet {
+	numExcludedModules := len(mod.excludedModules)
+	if numExcludedModules == 0 {
+		return nil
+	}
+
+	excludedFilesets := make([]*source.FileSet, numExcludedModules)
+	for i, excl := range mod.excludedModules {
+		excludedFilesets[i] = excl.fileset
+	}
+	return excludedFilesets
+}
+
 func (mod *Module) buildInitialFileSet() {
-	fileset := dep.BuildFileSet(mod.fileset.Workspace(), mod.PrimaryEntryPoint())
+	excludedFilesets := mod.excludedFilesets()
+	fileset := dep.BuildFileSet(mod.fileset.Workspace(), mod.PrimaryEntryPoint(), excludedFilesets)
 	for _, entryPoint := range mod.entryPoints {
-		dep.UpdateFileset(fileset, entryPoint)
+		dep.UpdateFileset(fileset, entryPoint, excludedFilesets)
 	}
 	mod.fileset = fileset
 }
@@ -132,12 +151,9 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 		entryPoint := mod.fileset.Workspace().ToRelativePath(entryPoint)
 		dep.UpdateFileset(mod.fileset, entryPoint)
 	}
-	mod.mutex.Lock()
-	defer mod.mutex.Unlock()
 
 	// artefact := mod.bundler.Bundle(fileset)
 	// appjs = artefact
-	// ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
 }
 
 func (mod *Module) links() []string {
@@ -148,11 +164,11 @@ func (mod *Module) links() []string {
 	return links
 }
 
-func (mod *Module) attachRelatedModules(set *ModuleSet) {
+func (mod *Module) attachExcludedModules(set *ModuleSet) {
 	for _, excl := range mod.description.Exclude {
 		excludedModule := set.getModule(excl)
 		if excludedModule == nil {
-			log.Panicf("attachRelatedModules: excluded module '%s' not found", excl)
+			log.Panicf("attachExcludedModules: excluded module '%s' not found", excl)
 		}
 		mod.excludedModules = append(mod.excludedModules, excludedModule)
 	}
