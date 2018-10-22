@@ -14,19 +14,19 @@ type FileSet struct {
 }
 
 // NewEmptyFileSet creates an empty FileSet
-func NewEmptyFileSet() *FileSet {
+func NewEmptyFileSet(workspace *Workspace) *FileSet {
 	fs := &FileSet{
 		index:        make(map[string]*File),
 		links:        make(map[string][]string),
 		reverseLinks: make(map[string][]string),
-		workspace:    nil,
+		workspace:    workspace,
 	}
 	return fs
 }
 
 // NewFileSet creates a new FileSet initialised with a series of imports and links
 func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace) *FileSet {
-	fs := NewEmptyFileSet()
+	fs := NewEmptyFileSet(workspace)
 
 	for _, imp := range imports {
 		file, err := workspace.ReadSourceFile(imp)

@@ -16,9 +16,9 @@ func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string) *so
 }
 
 // UpdateFileset adds dependencies for an entry file to a FileSet
-// func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string) {
-// 	ws := fileset.Workspace()
-// }
+func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string) {
+	// ws := fileset.Workspace()
+}
 
 func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string) ([]*source.Import, []*source.DependencyLink) {
 	queue := newImportQueue()

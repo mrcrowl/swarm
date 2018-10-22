@@ -9,8 +9,13 @@ import (
 const ConfigAppID = "app/src/ConfigApp.js"
 const ConfigApp = "c:\\wf\\lp\\web\\App\\app\\src\\ConfigApp.js"
 
+func createWorkspace() *Workspace {
+	ws := NewWorkspace("c:\\wf\\lp\\web\\App")
+	return ws
+}
+
 func TestContains(t *testing.T) {
-	sut := NewEmptyFileSet()
+	sut := NewEmptyFileSet(createWorkspace())
 	assert.False(t, sut.contains(ConfigAppID))
 	file := newFile(ConfigAppID, ConfigApp)
 	sut.Add(file)
@@ -23,14 +28,14 @@ func TestContains(t *testing.T) {
 }
 
 func TestDependency(t *testing.T) {
-	sut := NewEmptyFileSet()
+	sut := NewEmptyFileSet(createWorkspace())
 	sut.Add(newFile("abcd", "c:\\abcd"))
 	sut.Add(newFile("abcd", "c:\\abcd"))
 	assert.Equal(t, 1, sut.Count())
 }
 
 func TestAddDistinct(t *testing.T) {
-	sut := NewEmptyFileSet()
+	sut := NewEmptyFileSet(createWorkspace())
 	sut.Add(newFile("abcd", "c:\\abcd"))
 	sut.Add(newFile("efgh", "c:\\efgh"))
 	sut.Add(newFile("ijkl", "c:\\ijkl"))

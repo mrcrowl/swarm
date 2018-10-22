@@ -1,9 +1,14 @@
 package bundle
 
 import (
+	"fmt"
 	"log"
 	"swarm/config"
+	"swarm/dep"
+	"swarm/monitor"
 	"swarm/source"
+	"sync"
+	"time"
 )
 
 // ModuleSet is
@@ -12,15 +17,10 @@ type ModuleSet struct {
 }
 
 // CreateModuleSet creates a ModuleSet from a list of NormalisedModuleDescriptions
-func CreateModuleSet(moduleDescriptions []*config.NormalisedModuleDescription) *ModuleSet {
+func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.NormalisedModuleDescription) *ModuleSet {
 	modules := make([]*Module, len(moduleDescriptions))
 	for i, descr := range moduleDescriptions {
-		modules[i] = &Module{
-			description:     descr,
-			fileset:         source.NewEmptyFileSet(),
-			entryPoints:     descr.Include,
-			excludedModules: nil,
-		}
+		modules[i] = NewModule(ws, descr)
 	}
 
 	set := &ModuleSet{modules}
@@ -30,7 +30,20 @@ func CreateModuleSet(moduleDescriptions []*config.NormalisedModuleDescription) *
 
 	set.sort()
 
+	for _, mod := range set.modules {
+		mod.buildInitialFileSet()
+	}
+
 	return set
+}
+
+// AbsorbChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
+func (set *ModuleSet) AbsorbChanges(changes *monitor.EventChangeset) {
+	start := time.Now()
+	for _, mod := range set.modules {
+		mod.absorbChanges(changes)
+	}
+	defer fmt.Printf("done in %s\n", time.Since(start))
 }
 
 func (set *ModuleSet) getModule(name string) *Module {
@@ -52,17 +65,17 @@ func (set *ModuleSet) names() []string {
 	return names
 }
 
-func (set *ModuleSet) links() map[string][]string {
-	links := make(map[string][]string)
+func (set *ModuleSet) linksMap() map[string][]string {
+	allLinks := make(map[string][]string)
 	for _, module := range set.modules {
-		links[module.Name()] = module.links()
+		allLinks[module.Name()] = module.links()
 	}
-	return links
+	return allLinks
 }
 
 func (set *ModuleSet) sort() {
 	sortedModules := make([]*Module, len(set.modules))
-	graph := source.NewIDGraph(set.links())
+	graph := source.NewIDGraph(set.linksMap())
 	sortedNames := graph.SortTopologically(set.names())
 	for i, name := range sortedNames {
 		sortedModules[i] = set.getModule(name)
@@ -70,17 +83,61 @@ func (set *ModuleSet) sort() {
 	set.modules = sortedModules
 }
 
-// Module is
+// Module is a container for managing part of a build
 type Module struct {
-	description     *config.NormalisedModuleDescription
-	fileset         *source.FileSet
-	entryPoints     []string
-	excludedModules []*Module
+	description       *config.NormalisedModuleDescription
+	fileset           *source.FileSet
+	entryPoints       []string
+	excludedModules   []*Module
+	compiledArtefacts map[string]string
+	bundler           *Bundler
+	mutex             *sync.Mutex
+}
+
+// NewModule creates a new Module from a NormalisedModuleDescripion
+func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) *Module {
+	entryPoints := []string{descr.RelativePath}
+	return &Module{
+		description:       descr,
+		fileset:           source.NewEmptyFileSet(ws),
+		entryPoints:       append(entryPoints, descr.Include...),
+		excludedModules:   nil,
+		compiledArtefacts: make(map[string]string),
+		bundler:           NewBundler(),
+		mutex:             &sync.Mutex{},
+	}
 }
 
 // Name gets the name of the module
 func (mod *Module) Name() string {
 	return mod.description.Name
+}
+
+// PrimaryEntryPoint gets the path to the primary entry/output point
+func (mod *Module) PrimaryEntryPoint() string {
+	return mod.description.RelativePath
+}
+
+func (mod *Module) buildInitialFileSet() {
+	fileset := dep.BuildFileSet(mod.fileset.Workspace(), mod.PrimaryEntryPoint())
+	for _, entryPoint := range mod.entryPoints {
+		dep.UpdateFileset(fileset, entryPoint)
+	}
+	mod.fileset = fileset
+}
+
+// absorbChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
+func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
+	for _, entryPoint := range changes.Changes() {
+		entryPoint := mod.fileset.Workspace().ToRelativePath(entryPoint)
+		dep.UpdateFileset(mod.fileset, entryPoint)
+	}
+	mod.mutex.Lock()
+	defer mod.mutex.Unlock()
+
+	// artefact := mod.bundler.Bundle(fileset)
+	// appjs = artefact
+	// ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
 }
 
 func (mod *Module) links() []string {

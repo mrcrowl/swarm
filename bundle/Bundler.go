@@ -15,7 +15,7 @@ func NewBundler() *Bundler {
 }
 
 // Bundle concatenates files in a FileSet into a single file
-func (b *Bundler) Bundle(fileset *source.FileSet) *strings.Builder {
+func (b *Bundler) Bundle(fileset *source.FileSet) string {
 	var sb strings.Builder
 	for _, file := range fileset.Files() {
 		file.EnsureLoaded()
@@ -24,5 +24,5 @@ func (b *Bundler) Bundle(fileset *source.FileSet) *strings.Builder {
 			sb.WriteString("\n")
 		}
 	}
-	return &sb
+	return sb.String()
 }

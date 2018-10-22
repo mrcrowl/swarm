@@ -121,10 +121,9 @@ func (graph *IDGraph) breakCycle(id string) {
 				// log.Printf("Breaking cycle: %s --> %s", idcurr, depID)
 				graph.removeDependentID(idcurr, depID)
 				return false
-			} else {
-				if !recurse(depID, depth+1) {
-					return false
-				}
+			}
+			if !recurse(depID, depth+1) {
+				return false
 			}
 		}
 		delete(visited, idcurr)
