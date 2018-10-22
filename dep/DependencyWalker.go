@@ -20,7 +20,6 @@ func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string, exc
 func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, excludedFilesets []*source.FileSet) {
 	// ws := fileset.Workspace()
 	// assume the file has been touched, so:
-	// 2. update the dependencies (but include this fileset in the exclusions)
 
 	// 1. invalidate it's content
 	fileID := relativePathToID(modifiedFileRelativePath)
@@ -29,8 +28,10 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 		return
 	}
 	file.UnloadContents()
+	fileset.MarkDirty()
 
-	imports, links := followDependencyChain(fileset.Workspace(), modifiedFileRelativePath, excludedFilesets)
+	// 2. update the dependencies (but include this fileset in the exclusions, so we don't follow paths we already know about)
+	imports, links := followDependencyChain(fileset.Workspace(), modifiedFileRelativePath, append(excludedFilesets, fileset))
 	fileset.Ingest(imports, links)
 }
 

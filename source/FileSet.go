@@ -11,6 +11,7 @@ type FileSet struct {
 	links        map[string][]string
 	reverseLinks map[string][]string
 	workspace    *Workspace
+	dirty        bool
 }
 
 // NewEmptyFileSet creates an empty FileSet
@@ -20,6 +21,7 @@ func NewEmptyFileSet(workspace *Workspace) *FileSet {
 		links:        make(map[string][]string),
 		reverseLinks: make(map[string][]string),
 		workspace:    workspace,
+		dirty:        true,
 	}
 	return fs
 }
@@ -46,6 +48,16 @@ func (fs *FileSet) Ingest(imports []*Import, links []*DependencyLink) {
 	for _, link := range links {
 		fs.AddLink(link)
 	}
+}
+
+// MarkDirty sets a fileset to dirty
+func (fs *FileSet) MarkDirty() {
+	fs.dirty = true
+}
+
+// Dirty gets a flag indicating whether the FileSet needs to be rebundled
+func (fs *FileSet) Dirty() bool {
+	return fs.dirty
 }
 
 // Workspace gets the workspace used by this Fileset
@@ -154,12 +166,4 @@ func (fs *FileSet) sortedFileIDs() []string {
 
 	sort.StringSlice(ids).Sort()
 	return ids
-}
-
-func (fs *FileSet) copyLinks() map[string][]string {
-	clone := make(map[string][]string)
-	for k, v := range fs.links {
-		clone[k] = append([]string(nil), v...)
-	}
-	return clone
 }

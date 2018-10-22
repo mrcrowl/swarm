@@ -9,6 +9,7 @@ import (
 const ConfigAppID = "app/src/ConfigApp.js"
 const ConfigApp = "c:\\wf\\lp\\web\\App\\app\\src\\ConfigApp.js"
 
+// duplicated in other places
 func createWorkspace() *Workspace {
 	ws := NewWorkspace("c:\\wf\\lp\\web\\App")
 	return ws

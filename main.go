@@ -2,27 +2,23 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"swarm/bundle"
-	"swarm/dep"
+	"swarm/config"
 	"swarm/monitor"
 	"swarm/source"
 	"swarm/web"
-	"sync"
 	"syscall"
-	"time"
 
 	"github.com/rjeczalik/notify"
 )
 
 const folder = "c:\\wf\\lp\\web\\App"
-
 const app = folder + "\\app\\src\\ep\\app.js"
+const buildFile = "C:\\WF\\LP\\web\\App\\build\\systemjs_build_app.json"
 
 func main() {
 	log.SetOutput(os.Stdout)
@@ -36,31 +32,17 @@ func main() {
 	}
 	mon := monitor.NewMonitor(ws, filterFn)
 
-	var appjs string
-	bundleMutex := &sync.Mutex{}
-	makeBundle := func(changeset *monitor.EventChangeset) {
-		fmt.Print("Bundling...")
-		start := time.Now()
-
-		fileset := dep.BuildFileSet(ws, "app/src/ep/app")
-		bundleMutex.Lock()
-		defer bundleMutex.Unlock()
-
-		bundler := bundle.NewBundler()
-		sb := bundler.Bundle(fileset)
-		appjs = sb.String()
-		// ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
-		defer fmt.Printf("done in %s\n", time.Since(start))
+	moduleDescrs, err := config.LoadBuildDescriptionFile(buildFile)
+	if err != nil {
+		log.Fatalf("Failed to load build description file: '%s'", buildFile)
 	}
 
-	go mon.NotifyOnChanges(makeBundle)
-	makeBundle(nil)
+	moduleSet := bundle.CreateModuleSet(ws, moduleDescrs.NormaliseModules(ws.RootPath()))
 
-	handlers := map[string]http.HandlerFunc{
-		"/app/src/ep/app.js": func(w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, appjs)
-		},
-	}
+	go mon.NotifyOnChanges(moduleSet.NotifyChanges)
+	moduleSet.NotifyChanges(nil)
+
+	handlers := moduleSet.GenerateHTTPHandlers()
 
 	server := web.CreateServer(folder, &web.ServerOptions{
 		Port:     8096,

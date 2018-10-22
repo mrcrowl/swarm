@@ -1,14 +1,14 @@
 package bundle
 
 import (
-	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"swarm/config"
 	"swarm/dep"
 	"swarm/monitor"
 	"swarm/source"
 	"sync"
-	"time"
 )
 
 // ModuleSet is
@@ -42,15 +42,22 @@ func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.Normalis
 	return set
 }
 
-// AbsorbChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
-func (set *ModuleSet) AbsorbChanges(changes *monitor.EventChangeset) {
+// NotifyChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
+func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 	set.mutex.Lock()
 	defer set.mutex.Unlock()
-	start := time.Now()
-	for _, mod := range set.modules {
-		mod.absorbChanges(changes)
+	if changes != nil {
+		for _, mod := range set.modules {
+			mod.absorbChanges(changes)
+		}
 	}
-	defer fmt.Printf("done in %s\n", time.Since(start))
+
+	// TODO: could this be parallelised?
+	for _, mod := range set.modules {
+		if mod.dirty() {
+			mod.generateArtefacts()
+		}
+	}
 }
 
 func (set *ModuleSet) getModule(name string) *Module {
@@ -90,13 +97,25 @@ func (set *ModuleSet) sort() {
 	set.modules = sortedModules
 }
 
+// GenerateHTTPHandlers creates http.HandlerFunc's that will return the bundled javascript
+func (set *ModuleSet) GenerateHTTPHandlers() map[string]http.HandlerFunc {
+	handlers := map[string]http.HandlerFunc{}
+	for _, module := range set.modules {
+		// "/app/src/ep/app.js":
+		handlers["/"+module.PrimaryEntryPoint()+".js"] = func(w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, module.bundledJavascript)
+		}
+	}
+	return handlers
+}
+
 // Module is a container for managing part of a build
 type Module struct {
 	description       *config.NormalisedModuleDescription
 	fileset           *source.FileSet
 	entryPoints       []string
 	excludedModules   []*Module
-	compiledArtefacts map[string]string
+	bundledJavascript string
 	bundler           *Bundler
 }
 
@@ -108,7 +127,7 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) 
 		fileset:           source.NewEmptyFileSet(ws),
 		entryPoints:       append(entryPoints, descr.Include...),
 		excludedModules:   nil,
-		compiledArtefacts: make(map[string]string),
+		bundledJavascript: "",
 		bundler:           NewBundler(),
 	}
 }
@@ -116,6 +135,10 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) 
 // Name gets the name of the module
 func (mod *Module) Name() string {
 	return mod.description.Name
+}
+
+func (mod *Module) dirty() bool {
+	return mod.fileset.Dirty()
 }
 
 // PrimaryEntryPoint gets the path to the primary entry/output point
@@ -147,13 +170,18 @@ func (mod *Module) buildInitialFileSet() {
 
 // absorbChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
 func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
+	excludedFilesets := mod.excludedFilesets()
+	ws := mod.fileset.Workspace()
 	for _, entryPoint := range changes.Changes() {
-		entryPoint := mod.fileset.Workspace().ToRelativePath(entryPoint)
-		dep.UpdateFileset(mod.fileset, entryPoint)
+		entryPointRelativePath, ok := ws.ToRelativePath(entryPoint.AbsoluteFilepath())
+		if ok {
+			dep.UpdateFileset(mod.fileset, entryPointRelativePath, excludedFilesets)
+		}
 	}
+}
 
-	// artefact := mod.bundler.Bundle(fileset)
-	// appjs = artefact
+func (mod *Module) generateArtefacts() {
+	mod.bundledJavascript = mod.bundler.Bundle(mod.fileset)
 }
 
 func (mod *Module) links() []string {
