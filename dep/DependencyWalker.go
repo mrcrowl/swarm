@@ -1,7 +1,7 @@
 package dep
 
 import (
-	"log"
+	"fmt"
 	"strings"
 	"swarm/io"
 	"swarm/source"
@@ -35,7 +35,7 @@ func followDependencyChain(workspace *source.Workspace, entryFileRelativePath st
 
 		importPath := imp.Path()
 		if file, err = workspace.ReadSourceFile(imp); err != nil {
-			log.Println("MISSING: " + importPath)
+			fmt.Println("MISSING: " + importPath)
 			// println("Could not find " + rootRelativeDepPath)
 			return
 		}

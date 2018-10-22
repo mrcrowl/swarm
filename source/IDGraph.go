@@ -1,7 +1,7 @@
 package source
 
 import (
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -172,7 +172,7 @@ func (graph *IDGraph) analyseForCycles(id string) {
 
 	if len(cycles) > 0 {
 		for _, c := range cycles {
-			log.Println(displayCycle(c))
+			fmt.Println(displayCycle(c))
 		}
 	}
 }

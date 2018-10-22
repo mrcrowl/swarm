@@ -1,9 +1,8 @@
 package source
 
 import (
-	"log"
+	"fmt"
 	"sort"
-	"time"
 )
 
 // FileSet is
@@ -32,7 +31,7 @@ func NewFileSet(imports []*Import, links []*DependencyLink, workspace *Workspace
 	for _, imp := range imports {
 		file, err := workspace.ReadSourceFile(imp)
 		if err != nil {
-			log.Printf("Could not read '%s'\n", imp.Path())
+			fmt.Printf("Could not read '%s'\n", imp.Path())
 			continue
 		}
 
@@ -53,15 +52,12 @@ func (fs *FileSet) Workspace() *Workspace {
 
 // Files returns a list of all Files in the set
 func (fs *FileSet) Files() []*File {
-	start := time.Now()
-	defer log.Printf("Files took %s", time.Since(start))
-
 	result := make([]*File, 0, len(fs.index))
 	for _, id := range fs.calcBundleOrder() {
 		if file, found := fs.index[id]; found {
 			result = append(result, file)
 		} else {
-			log.Printf("WARN: Files could not find file %s\n", id)
+			fmt.Printf("WARN: Files could not find file %s\n", id)
 		}
 	}
 	return result
@@ -80,13 +76,13 @@ func (fs *FileSet) Add(file *File) bool {
 // AddLink adds a DependencyLink between Files in a FileSet
 func (fs *FileSet) AddLink(link *DependencyLink) bool {
 	if !fs.contains(link.id) {
-		log.Printf("AddLink: dependent file doesn't exist in the FileSet, ID: %s\n", link.id)
+		fmt.Printf("ERROR: AddLink() dependent file doesn't exist in the FileSet, ID: %s\n", link.id)
 		return false
 	}
 
 	for _, dependencyID := range link.dependencyIDs {
 		if !fs.contains(dependencyID) {
-			log.Printf("AddLink: dependency file doesn't exist in the FileSet, ID: %s\n", dependencyID)
+			fmt.Printf("ERROR: AddLink() dependency file doesn't exist in the FileSet, ID: %s\n", dependencyID)
 			return false
 		}
 	}

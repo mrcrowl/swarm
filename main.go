@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"swarm/web"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/rjeczalik/notify"
 )
@@ -37,16 +39,18 @@ func main() {
 	var appjs string
 	bundleMutex := &sync.Mutex{}
 	makeBundle := func(changeset *monitor.EventChangeset) {
+		fmt.Print("Bundling...")
+		start := time.Now()
+
 		fileset := dep.BuildFileSet(ws, "app/src/ep/app")
 		bundleMutex.Lock()
 		defer bundleMutex.Unlock()
 
-		log.Print("Bundling...")
 		bundler := bundle.NewBundler()
 		sb := bundler.Bundle(fileset)
 		appjs = sb.String()
 		// ioutil.WriteFile(app, []byte(sb.String()), os.ModePerm) // HACK
-		log.Println("Done")
+		defer fmt.Printf("done in %s\n", time.Since(start))
 	}
 
 	go mon.NotifyOnChanges(makeBundle)
@@ -63,7 +67,7 @@ func main() {
 		Handlers: handlers,
 	})
 	go server.Start()
-	log.Printf("Listening on http://localhost:%d", server.Port())
+	fmt.Printf("Listening on http://localhost:%d\n", server.Port())
 	waitForExit(server)
 }
 
