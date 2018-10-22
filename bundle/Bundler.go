@@ -21,7 +21,7 @@ func (b *Bundler) Bundle(fileset *source.FileSet) *strings.Builder {
 		file.EnsureLoaded()
 		for _, line := range file.BundleBody() {
 			sb.WriteString(line)
-			sb.WriteString("\r\n")
+			sb.WriteString("\n")
 		}
 	}
 	return &sb

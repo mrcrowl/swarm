@@ -28,8 +28,8 @@ type NormalisedModuleDescription struct {
 	AbsoluteFilepath string
 }
 
-// LoadBuildDescription loads a JSON build configuration file
-func LoadBuildDescription(buildFilepath string) (*BuildDescription, error) {
+// LoadBuildDescriptionFile loads a JSON build configuration file
+func LoadBuildDescriptionFile(buildFilepath string) (*BuildDescription, error) {
 	if filepath.Ext(buildFilepath) == "" {
 		buildFilepath += ".json"
 	}
@@ -39,8 +39,15 @@ func LoadBuildDescription(buildFilepath string) (*BuildDescription, error) {
 		return nil, errors.New("Invalid config file: " + buildFilepath)
 	}
 
+	jsonString := string(buildBytes)
+	description, err := LoadBuildDescriptionString(jsonString)
+	return description, err
+}
+
+// LoadBuildDescriptionString loads a JSON string
+func LoadBuildDescriptionString(buildFileString string) (*BuildDescription, error) {
 	var description *BuildDescription
-	err := json.Unmarshal(buildBytes, &description)
+	err := json.Unmarshal([]byte(buildFileString), &description)
 	if err != nil {
 		return nil, errors.New("Invalid JSON in config file: " + err.Error())
 	}
@@ -69,7 +76,7 @@ func (module *ModuleDescription) Normalise(basePath string, rootPath string) *No
 
 	excludes := make([]string, len(module.Exclude))
 	for i, excl := range module.Exclude {
-		excludes[i] = normaliseRelativePath(excl)
+		excludes[i] = excl
 	}
 
 	return &NormalisedModuleDescription{

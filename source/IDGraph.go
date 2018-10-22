@@ -11,7 +11,8 @@ type IDGraph struct {
 	ingressEdges map[string][]string
 }
 
-func newIDGraph(links map[string][]string) *IDGraph {
+// NewIDGraph creates a new IDGraph
+func NewIDGraph(links map[string][]string) *IDGraph {
 	egressEdges := make(map[string][]string)
 	ingressEdges := make(map[string][]string)
 
@@ -33,7 +34,8 @@ func newIDGraph(links map[string][]string) *IDGraph {
 	return &IDGraph{egressEdges, ingressEdges}
 }
 
-func (graph *IDGraph) sortTopologically(ids []string) []string {
+// SortTopologically sorts the IDs in topographical order, using the links provided to NewIDGraph
+func (graph *IDGraph) SortTopologically(ids []string) []string {
 	sortedIDs := make([]string, 0, len(ids))
 
 	independentIDs := graph.identifyIndependentIDs(ids)

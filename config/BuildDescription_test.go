@@ -8,29 +8,29 @@ import (
 )
 
 func TestLoadBuildDescription(t *testing.T) {
-	descr, err := LoadBuildDescription("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel.json")
+	descr, err := LoadBuildDescriptionFile("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel.json")
 	assert.Nil(t, err)
 	assert.True(t, len(descr.Modules) > 10)
 }
 
 func TestLoadBuildDescriptionMissingSuffix(t *testing.T) {
-	descr, err := LoadBuildDescription("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel")
+	descr, err := LoadBuildDescriptionFile("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel")
 	assert.Nil(t, err)
 	assert.True(t, len(descr.Modules) > 10)
 }
 
 func TestErrorLoadBuildDescriptionMissing(t *testing.T) {
-	_, err := LoadBuildDescription("c:\\asdlfhasdjkf.json")
+	_, err := LoadBuildDescriptionFile("c:\\asdlfhasdjkf.json")
 	assert.NotNil(t, err)
 }
 
 func TestErrorLoadBuildDescriptionNotJSON(t *testing.T) {
-	_, err := LoadBuildDescription("c:\\wf\\lp\\web\\App\\build\\exclusion-libs-app.txt")
+	_, err := LoadBuildDescriptionFile("c:\\wf\\lp\\web\\App\\build\\exclusion-libs-app.txt")
 	assert.NotNil(t, err)
 }
 
 func TestNormaliseModules(t *testing.T) {
-	build, err := LoadBuildDescription("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel")
+	build, err := LoadBuildDescriptionFile("c:\\wf\\lp\\web\\App\\build\\systemjs_build_controlpanel")
 	assert.Nil(t, err)
 	normMods := build.NormaliseModules("c:\\wf\\lp\\web\\App\\build")
 	isNormalised := func(path string) bool {

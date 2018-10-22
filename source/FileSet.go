@@ -126,8 +126,8 @@ func (fs *FileSet) nonEmpty() bool {
 }
 
 func (fs *FileSet) calcBundleOrder() []string {
-	graph := newIDGraph(fs.links)
-	topoSortedIDs := graph.sortTopologically(fs.sortedFileIDs())
+	graph := NewIDGraph(fs.links)
+	topoSortedIDs := graph.SortTopologically(fs.sortedFileIDs())
 	// if len(leftOverIDs) > 0 {
 	// 	graph.analyseLeftoverIDs(leftOverIDs)
 	// }

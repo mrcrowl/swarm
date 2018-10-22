@@ -12,8 +12,8 @@ func TestIDGraph(t *testing.T) {
 		"b": []string{"c"},
 		"c": []string{"d"},
 	}
-	g := newIDGraph(links)
-	topoOrder := g.sortTopologically([]string{"a", "b", "c", "d"})
+	g := NewIDGraph(links)
+	topoOrder := g.SortTopologically([]string{"a", "b", "c", "d"})
 	assert.True(t, assert.ObjectsAreEqual([]string{"d", "c", "b", "a"}, topoOrder))
 }
 
