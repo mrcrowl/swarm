@@ -46,7 +46,6 @@ func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.Normalis
 // NotifyChanges absorbs an EventChangeset, triggering artefacts to be recompiled, when necessary
 func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 	set.mutex.Lock()
-	defer set.mutex.Unlock()
 	if changes != nil {
 		for _, mod := range set.modules {
 			mod.absorbChanges(changes)
@@ -59,6 +58,7 @@ func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 			mod.generateArtefacts()
 		}
 	}
+	set.mutex.Unlock()
 }
 
 func (set *ModuleSet) getModule(name string) *Module {

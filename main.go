@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
+	"path/filepath"
 	"swarm/bundle"
 	"swarm/config"
 	"swarm/monitor"
@@ -25,10 +25,12 @@ func main() {
 
 	ws := source.NewWorkspace(folder)
 	filterFn := func(event notify.Event, path string) bool {
-		if strings.HasSuffix(path, ".ts") {
-			return false
+		ext := filepath.Ext(path)
+
+		if ext == ".js" || ext == ".html" || ext == ".css" || ext == ".json" {
+			return true
 		}
-		return true
+		return false
 	}
 	mon := monitor.NewMonitor(ws, filterFn)
 

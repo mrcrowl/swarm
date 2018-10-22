@@ -67,14 +67,14 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 			// debounce and fire callback
 			if changeset.nonEmpty() {
 				fmt.Println("")
-				callback(changeset)
+				go callback(changeset)
+				changeset = NewEventChangeset()
 				elapsed := time.Since(start)
 				fmt.Printf("...done in %s\n", elapsed)
 			} else {
 				fmt.Println("")
 				fmt.Println("...no changes")
 			}
-			changeset = NewEventChangeset()
 		}
 	}
 }

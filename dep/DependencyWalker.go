@@ -31,10 +31,8 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 	if file != nil {
 		file.UnloadContents()
 		fileset.MarkDirty()
-	}
 
-	// 2. update the dependencies (but include "fileset" in the exclusions, so we don't follow paths we already know about)
-	if fileset.Dirty() {
+		// 2. update the dependencies (but include "fileset" in the exclusions, so we don't follow paths we already know about)
 		imports, links := followDependencyChain(fileset.Workspace(), fileID, append(excludedFilesets, fileset))
 		fileset.Ingest(imports, links, true)
 	}

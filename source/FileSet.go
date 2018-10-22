@@ -70,14 +70,19 @@ func (fs *FileSet) Workspace() *Workspace {
 
 // Files returns a list of all Files in the set
 func (fs *FileSet) Files() []*File {
-	result := make([]*File, 0, len(fs.index))
-	for _, id := range fs.calcBundleOrder() {
-		if file, found := fs.index[id]; found {
-			result = append(result, file)
-		} else {
-			fmt.Printf("WARN: Files could not find file %s\n", id)
-		}
+	result := make([]*File, len(fs.index))
+	i := 0
+	for _, file := range fs.index {
+		result[i] = file
+		i++
 	}
+	// for _, id := range fs.calcBundleOrder() {
+	// 	if file, found := fs.index[id]; found {
+	// 		result = append(result, file)
+	// 	} else {
+	// 		fmt.Printf("WARN: Files could not find file %s\n", id)
+	// 	}
+	// }
 	return result
 }
 
@@ -93,12 +98,18 @@ func (fs *FileSet) Add(file *File) bool {
 		return false
 	}
 
-	fs.Replace(file)
+	fs.index[file.ID] = file
 	return true
 }
 
 // Replace overwrites a File in a FileSet
 func (fs *FileSet) Replace(file *File) {
+	// if !fs.Contains(file.ID) {
+	// 	fmt.Printf("REP+NEW: %s\n", file.ID)
+	// } else {
+	// 	fmt.Printf("REPLACE: %s\n", file.ID)
+	// }
+
 	fs.index[file.ID] = file
 }
 
