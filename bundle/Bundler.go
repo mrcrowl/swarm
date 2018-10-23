@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"strings"
+	"swarm/config"
 	"swarm/source"
 )
 
@@ -15,12 +16,11 @@ func NewBundler() *Bundler {
 }
 
 // Bundle concatenates files in a FileSet into a single file
-func (b *Bundler) Bundle(fileset *source.FileSet) string {
+func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeConfig) string {
 	var sb strings.Builder
 	files := fileset.Files()
-	// fmt.Printf("   %d files to bundle\n", len(files))
 	for _, file := range files {
-		file.EnsureLoaded()
+		file.EnsureLoaded(runtimeConfig)
 		for _, line := range file.BundleBody() {
 			sb.WriteString(line)
 			sb.WriteString("\n")

@@ -19,10 +19,10 @@ type ModuleSet struct {
 }
 
 // CreateModuleSet creates a ModuleSet from a list of NormalisedModuleDescriptions
-func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.NormalisedModuleDescription) *ModuleSet {
+func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.NormalisedModuleDescription, runtimeConfig *config.RuntimeConfig) *ModuleSet {
 	modules := make([]*Module, len(moduleDescriptions))
 	for i, descr := range moduleDescriptions {
-		modules[i] = NewModule(ws, descr)
+		modules[i] = NewModule(ws, descr, runtimeConfig)
 	}
 
 	set := &ModuleSet{
@@ -118,10 +118,11 @@ type Module struct {
 	excludedModules   []*Module
 	bundledJavascript string
 	bundler           *Bundler
+	runtimeConfig     *config.RuntimeConfig
 }
 
 // NewModule creates a new Module from a NormalisedModuleDescripion
-func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) *Module {
+func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription, runtimeConfig *config.RuntimeConfig) *Module {
 	entryPoints := append([]string(nil), descr.Include...)
 	return &Module{
 		description:       descr,
@@ -130,6 +131,7 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription) 
 		excludedModules:   nil,
 		bundledJavascript: "",
 		bundler:           NewBundler(),
+		runtimeConfig:     runtimeConfig,
 	}
 }
 
@@ -182,9 +184,9 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 }
 
 func (mod *Module) generateArtefacts() {
-	mod.bundledJavascript = mod.bundler.Bundle(mod.fileset)
+	mod.bundledJavascript = mod.bundler.Bundle(mod.fileset, mod.runtimeConfig)
 	mod.fileset.ClearDirty()
-	fmt.Printf("   Bundled: /" + mod.PrimaryEntryPoint() + ".js\n")
+	fmt.Printf("   Bundled: /%s.js (%d files)\n", mod.PrimaryEntryPoint(), mod.fileset.Count())
 }
 
 func (mod *Module) links() []string {

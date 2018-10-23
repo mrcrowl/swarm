@@ -3,13 +3,11 @@ package monitor
 import (
 	"fmt"
 	"os"
-	"strings"
+	"swarm/config"
 	"swarm/source"
 	"swarm/testutil"
 	"testing"
 	"time"
-
-	"github.com/rjeczalik/notify"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,8 +15,7 @@ import (
 func TestMonitor(t *testing.T) {
 	dir := testutil.CreateTempDirWithPrefix("TestMonitor")
 	ws := source.NewWorkspace(dir)
-	filterFn := func(event notify.Event, path string) bool { return !strings.HasSuffix(path, "9.js") }
-	mon := NewMonitor(ws, filterFn)
+	mon := NewMonitor(ws, config.NewMonitorConfig([]string{".js"}, 150))
 
 	notifyCount := 0
 	eventCount := 0
@@ -30,7 +27,12 @@ func TestMonitor(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	for i := 0; i < 10; i++ {
-		filename := fmt.Sprintf("abcd%d.js", i)
+		var filename string
+		if i < 9 {
+			filename = fmt.Sprintf("abcd%d.js", i)
+		} else {
+			filename = "abcd.ts"
+		}
 		testutil.WriteTextFile(dir, filename, "hello world")
 	}
 

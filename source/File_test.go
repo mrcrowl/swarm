@@ -2,6 +2,7 @@ package source
 
 import (
 	"os"
+	"swarm/config"
 	"swarm/testutil"
 	"testing"
 
@@ -32,7 +33,7 @@ func TestNoImmediateLoad(t *testing.T) {
 
 func TestLoadNonExistentFile(t *testing.T) {
 	f := newFile("blah", "c:\\asldkfhjaksjdfh.js")
-	f.EnsureLoaded()
+	f.EnsureLoaded(nil)
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &FailedFileContents{}, f.contents)
 	assert.Nil(t, f.BundleBody())
@@ -41,7 +42,7 @@ func TestLoadNonExistentFile(t *testing.T) {
 func TestEnsureLoadedPlainJS(t *testing.T) {
 	setup()
 	f := getSampleFile("abcd", ".js", "alert(\"hi\")")
-	f.EnsureLoaded()
+	f.EnsureLoaded(nil)
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &JSFileContents{}, f.contents)
 	assert.Len(t, f.BundleBody(), 1)
@@ -53,7 +54,7 @@ func TestEnsureLoadedSystemJS(t *testing.T) {
 	f := getSampleFile("abcd", ".js", `System.register([], function(export, require) { 
 		alert(\"hi\");
 	}`)
-	f.EnsureLoaded()
+	f.EnsureLoaded(nil)
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &JSFileContents{}, f.contents)
 	assert.Len(t, f.BundleBody(), 3)
@@ -64,7 +65,7 @@ func TestEnsureLoadedSystemJS(t *testing.T) {
 func TestEnsureLoadedCSS(t *testing.T) {
 	setup()
 	f := getSampleFile("abcd", ".css", "body { background: green }")
-	f.EnsureLoaded()
+	f.EnsureLoaded(config.NewRuntimeConfig("", "app"))
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &CSSFileContents{}, f.contents)
 	assert.Len(t, f.BundleBody(), 12)

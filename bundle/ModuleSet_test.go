@@ -46,7 +46,7 @@ func TestCreateModuleSet(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Len(t, descr.Modules, 3)
-	set := CreateModuleSet(createWorkspace(), descr.NormaliseModules("c:\\wf\\lp\\web\\App"))
+	set := CreateModuleSet(createWorkspace(), descr.NormaliseModules("c:\\wf\\lp\\web\\App"), nil)
 	assert.True(t, assert.ObjectsAreEqual([]string{"abcd/efgh", "wxyz/zzzz", "stuv/vvvv"}, set.names()), "Module order doesn't match")
 }
 
@@ -55,6 +55,6 @@ func TestCreateModuleSetFromFile(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.True(t, len(descr.Modules) > 10)
-	set := CreateModuleSet(createWorkspace(), descr.NormaliseModules("c:\\wf\\lp\\web\\App"))
+	set := CreateModuleSet(createWorkspace(), descr.NormaliseModules("c:\\wf\\lp\\web\\App"), nil)
 	assert.Equal(t, "controlPanel/ControlPanel", set.names()[0], "controlPanel/ControlPanel should be the first module")
 }

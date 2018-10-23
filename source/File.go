@@ -2,6 +2,7 @@ package source
 
 import (
 	"path/filepath"
+	"swarm/config"
 	"swarm/io"
 )
 
@@ -34,14 +35,14 @@ func (file *File) Loaded() bool {
 }
 
 // EnsureLoaded ensures that the Load method has been called for this File instance
-func (file *File) EnsureLoaded() {
+func (file *File) EnsureLoaded(runtimeConfig *config.RuntimeConfig) {
 	if !file.Loaded() {
-		file.LoadContents()
+		file.LoadContents(runtimeConfig)
 	}
 }
 
 // LoadContents loads a file's contents from disk and prepares them for bundling
-func (file *File) LoadContents() {
+func (file *File) LoadContents(runtimeConfig *config.RuntimeConfig) {
 	contents, err := io.ReadContents(file.Filepath)
 	if err != nil {
 		file.contents = &FailedFileContents{}
@@ -52,7 +53,7 @@ func (file *File) LoadContents() {
 	case ".js":
 		file.contents, err = ParseJSFileContents(file.ID, contents)
 	case ".css":
-		file.contents, err = ParseCSSFileContents(file.ID, contents)
+		file.contents, err = ParseCSSFileContents(file.ID, contents, runtimeConfig.BaseHref)
 	default:
 		file.contents, err = ParseStringFileContents(file.ID, contents)
 	}

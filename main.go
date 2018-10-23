@@ -5,15 +5,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"swarm/bundle"
 	"swarm/config"
 	"swarm/monitor"
 	"swarm/source"
 	"swarm/web"
 	"syscall"
-
-	"github.com/rjeczalik/notify"
 )
 
 const folder = "c:\\wf\\lp\\web\\App"
@@ -23,23 +20,29 @@ const buildFile = "C:\\WF\\LP\\web\\App\\build\\systemjs_build_app.json"
 func main() {
 	log.SetOutput(os.Stdout)
 
-	ws := source.NewWorkspace(folder)
-	filterFn := func(event notify.Event, path string) bool {
-		ext := filepath.Ext(path)
-
-		if ext == ".js" || ext == ".html" || ext == ".css" || ext == ".json" {
-			return true
-		}
-		return false
+	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
+	if err != nil {
+		log.Fatalf("Failed to load swarm.json file: %s", err)
+		return
 	}
-	mon := monitor.NewMonitor(ws, filterFn)
+
+	ws := source.NewWorkspace(folder)
+	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
 
 	moduleDescrs, err := config.LoadBuildDescriptionFile(buildFile)
 	if err != nil {
 		log.Fatalf("Failed to load build description file: '%s'", buildFile)
+		return
 	}
 
-	moduleSet := bundle.CreateModuleSet(ws, moduleDescrs.NormaliseModules(ws.RootPath()))
+	selectedBuild := "app"
+	runtimeConfig := swarmConfig.Builds[selectedBuild]
+
+	moduleSet := bundle.CreateModuleSet(
+		ws,
+		moduleDescrs.NormaliseModules(ws.RootPath()),
+		runtimeConfig,
+	)
 
 	go mon.NotifyOnChanges(moduleSet.NotifyChanges)
 	moduleSet.NotifyChanges(nil)
@@ -47,7 +50,7 @@ func main() {
 	handlers := moduleSet.GenerateHTTPHandlers()
 
 	server := web.CreateServer(folder, &web.ServerOptions{
-		Port:     8096,
+		Port:     swarmConfig.Server.Port,
 		Handlers: handlers,
 	})
 	go server.Start()

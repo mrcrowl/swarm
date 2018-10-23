@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"swarm/config"
 	"swarm/source"
 	"time"
 
@@ -15,13 +16,14 @@ type FilterFn func(notify.Event, string) bool
 
 // Monitor is used to recursively watch for file changes within a workspace
 type Monitor struct {
-	workspace *source.Workspace
-	channel   chan notify.EventInfo
-	filter    FilterFn
+	workspace        *source.Workspace
+	channel          chan notify.EventInfo
+	filter           FilterFn
+	debounceDuration time.Duration
 }
 
 // NewMonitor creates a new Monitor
-func NewMonitor(workspace *source.Workspace, filter FilterFn) *Monitor {
+func NewMonitor(workspace *source.Workspace, config *config.MonitorConfig) *Monitor {
 	channel := make(chan notify.EventInfo, 2048)
 
 	rootPathRecursive := filepath.Join(workspace.RootPath(), "./...")
@@ -29,15 +31,31 @@ func NewMonitor(workspace *source.Workspace, filter FilterFn) *Monitor {
 		log.Fatal(err)
 	}
 
+	filter := createExtensionFilterFn(config.Extensions)
+	debounceDuration := time.Millisecond * time.Duration(config.DebounceMillis)
+
 	return &Monitor{
 		workspace,
 		channel,
 		filter,
+		debounceDuration,
+	}
+}
+
+func createExtensionFilterFn(extensions []string) FilterFn {
+	return func(event notify.Event, path string) bool {
+		ext := filepath.Ext(path)
+		for _, validExt := range extensions {
+			if ext == validExt {
+				return true
+			}
+		}
+
+		return false
 	}
 }
 
 const notifyInterval = 10 * time.Minute
-const debounceInterval = 100 * time.Millisecond
 
 // NotifyOnChanges notifies when events occur (after debouncing)
 func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
@@ -60,7 +78,7 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 					fmt.Print(".")
 				}
 				changeset.Add(event, path)
-				debounceTimer.Reset(debounceInterval)
+				debounceTimer.Reset(mon.debounceDuration)
 			}
 
 		case <-debounceTimer.C:
