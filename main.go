@@ -19,6 +19,7 @@ import (
 const folder = "c:\\wf\\lp\\web\\App"
 
 func main() {
+	fmt.Print("\nSwarm welcomes you.\n\n")
 	log.SetOutput(os.Stdout)
 
 	// configuration
@@ -59,7 +60,13 @@ func main() {
 }
 
 func chooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
-	fmt.Print("\nSwarm welcomes you.\n\n")
+	if len(os.Args) > 1 {
+		buildName := os.Args[1]
+		if build, found := builds[buildName]; found {
+			return build
+		}
+	}
+
 	fmt.Println("Please choose a build:")
 	for {
 		buildNames := make([]string, len(builds))

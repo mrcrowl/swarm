@@ -100,12 +100,15 @@ func (set *ModuleSet) sort() {
 
 // GenerateHTTPHandlers creates http.HandlerFunc's that will return the bundled javascript
 func (set *ModuleSet) GenerateHTTPHandlers() map[string]http.HandlerFunc {
-	handlers := map[string]http.HandlerFunc{}
-	for _, module := range set.modules {
-		// "/app/src/ep/app.js":
-		handlers["/"+module.PrimaryEntryPoint()+".js"] = func(w http.ResponseWriter, r *http.Request) {
+	createHandler := func(module *Module) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			io.WriteString(w, module.bundledJavascript)
 		}
+	}
+
+	handlers := map[string]http.HandlerFunc{}
+	for _, module := range set.modules {
+		handlers["/"+module.PrimaryEntryPoint()+".js"] = createHandler(module)
 	}
 	return handlers
 }

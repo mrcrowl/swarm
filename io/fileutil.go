@@ -60,5 +60,16 @@ func ReadContents(filepath string) (string, error) {
 		return "", err
 	}
 
-	return string(bytes), nil
+	return trimByteOrderMark(string(bytes)), nil
+}
+
+func trimByteOrderMark(s string) string {
+	if len(s) > 3 &&
+		s[0] == 0xef &&
+		s[1] == 0xbb &&
+		s[2] == 0xbf { // byte-order mark
+		return s[3:]
+	}
+
+	return s
 }
