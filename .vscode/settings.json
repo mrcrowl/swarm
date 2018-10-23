@@ -1,0 +1,6 @@
+{
+    "files.exclude": {
+        "**/debug": true,
+        "**/debug.test": true
+    }
+}
