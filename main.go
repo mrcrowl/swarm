@@ -16,8 +16,6 @@ import (
 	"syscall"
 )
 
-const folder = "c:\\wf\\lp\\web\\App"
-
 func main() {
 	fmt.Print("\nSwarm welcomes you.\n\n")
 	log.SetOutput(os.Stdout)
@@ -36,7 +34,7 @@ func main() {
 	}
 
 	// monitor
-	ws := source.NewWorkspace(folder)
+	ws := source.NewWorkspace(swarmConfig.RootPath)
 	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
 	moduleSet := bundle.CreateModuleSet(
 		ws,
@@ -48,7 +46,7 @@ func main() {
 
 	// web server
 	handlers := moduleSet.GenerateHTTPHandlers()
-	server := web.CreateServer(folder, &web.ServerOptions{
+	server := web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
 		Port:     swarmConfig.Server.Port,
 		Handlers: handlers,
 	})

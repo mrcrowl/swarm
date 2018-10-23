@@ -3,6 +3,7 @@ package source
 import (
 	"log"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -16,6 +17,8 @@ type Import struct {
 	IsRooted         bool
 	IsSolo           bool
 }
+
+var reStripInterpolationTemplate = regexp.MustCompile(`#\{.*?\}`)
 
 // NewImport creates an Import for a path
 func NewImport(importPath string) *Import {
@@ -33,6 +36,9 @@ func NewImport(importPath string) *Import {
 		directory = ""
 		IsSolo = true
 	}
+
+	// Clean interpolation templates of the form "../path/file#{Config|Config.RELEASE}.html".
+	importPath = reStripInterpolationTemplate.ReplaceAllString(importPath, "")
 
 	directive := ""
 	if directivePos := strings.Index(importPath, "#?"); directivePos >= 0 {
