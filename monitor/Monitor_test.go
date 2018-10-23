@@ -2,12 +2,10 @@ package monitor
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"swarm/source"
+	"swarm/testutil"
 	"testing"
 	"time"
 
@@ -17,11 +15,7 @@ import (
 )
 
 func TestMonitor(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "TestMonitor")
-	if err != nil {
-		log.Panicln("Failed to create temp dir")
-	}
-
+	dir := testutil.CreateTempDirWithPrefix("TestMonitor")
 	ws := source.NewWorkspace(dir)
 	filterFn := func(event notify.Event, path string) bool { return !strings.HasSuffix(path, "9.js") }
 	mon := NewMonitor(ws, filterFn)
@@ -37,7 +31,7 @@ func TestMonitor(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		filename := fmt.Sprintf("abcd%d.js", i)
-		ioutil.WriteFile(filepath.Join(dir, filename), []byte("hello world"), os.ModePerm)
+		testutil.WriteTextFile(dir, filename, "hello world")
 	}
 
 	assert.Equal(t, 0, notifyCount)

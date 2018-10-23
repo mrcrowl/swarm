@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"io/ioutil"
 	"os"
+	"path"
+	"strings"
 )
 
 // ReadFirstLine reads the first line of a text file as a string
@@ -15,11 +17,40 @@ func ReadFirstLine(filepath string) (string, error) {
 	defer f.Close()
 
 	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		return sc.Text(), nil
-	}
+	firstLine := readFirstLineBeyondComments(sc)
 
-	return "", nil
+	return firstLine, nil
+}
+
+func readFirstLineBeyondComments(sc *bufio.Scanner) string {
+	inBlockComment := false
+	for sc.Scan() {
+		line := sc.Text()
+		if strings.HasPrefix(line, "//") {
+			continue
+		}
+		if strings.HasPrefix(line, "/*") {
+			inBlockComment = true
+			continue
+		}
+		if inBlockComment {
+			if strings.Contains(line, "*/") {
+				inBlockComment = false
+			}
+			continue
+		}
+		return line
+	}
+	return ""
+}
+
+// RemoveExtension returns a path without the extension
+func RemoveExtension(relativePath string) string {
+	ext := path.Ext(relativePath)
+	if ext != "" {
+		return relativePath[:len(relativePath)-len(ext)]
+	}
+	return relativePath
 }
 
 // ReadContents reads the entire contents of a text file as a string

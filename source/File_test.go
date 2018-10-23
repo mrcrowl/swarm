@@ -1,9 +1,8 @@
 package source
 
 import (
-	"io/ioutil"
 	"os"
-	"path/filepath"
+	"swarm/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +11,7 @@ import (
 var temppath string
 
 func setup() {
-	temppath, _ = ioutil.TempDir("", "File_test")
+	temppath = testutil.CreateTempDirWithPrefix("File_test")
 }
 
 func teardown() {
@@ -20,8 +19,7 @@ func teardown() {
 }
 
 func getSampleFile(id string, ext string, contents string) *File {
-	absoluteFilepath := filepath.Join(temppath, "blah"+ext)
-	ioutil.WriteFile(absoluteFilepath, []byte(contents), os.ModePerm)
+	absoluteFilepath := testutil.WriteTextFile(temppath, "blah"+ext, contents)
 	return newFile(id, absoluteFilepath)
 }
 

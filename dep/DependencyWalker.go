@@ -24,7 +24,7 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 
 	fileID := modifiedFileRelativePath
 	if path.Ext(modifiedFileRelativePath) == ".js" {
-		fileID = removeExtension(modifiedFileRelativePath)
+		fileID = io.RemoveExtension(modifiedFileRelativePath)
 	}
 
 	file := fileset.Get(fileID)
@@ -36,14 +36,6 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 		imports, links := followDependencyChain(fileset.Workspace(), fileID, append(excludedFilesets, fileset))
 		fileset.Ingest(imports, links, true)
 	}
-}
-
-func removeExtension(relativePath string) string {
-	ext := path.Ext(relativePath)
-	if ext != "" {
-		return relativePath[:len(relativePath)-len(ext)]
-	}
-	return relativePath
 }
 
 func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string, excludedFilesets []*source.FileSet /* may be nil */) ([]*source.Import, []*source.DependencyLink) {

@@ -1,7 +1,7 @@
 package source
 
 import (
-	"io/ioutil"
+	"swarm/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,8 +31,7 @@ func TestCountLinesWindows(t *testing.T) {
 }
 
 func TestCountLooooongLines(t *testing.T) {
-	bytes, _ := ioutil.ReadFile("c:\\wf\\lp\\web\\App\\node_modules\\systemjs\\dist\\system.js")
-	source := string(bytes)
+	source := testutil.ReadTextFile("c:\\wf\\lp\\web\\App\\node_modules\\systemjs\\dist", "system.js")
 	count, err := countLines(source)
 	assert.Nil(t, err)
 	assert.Equal(t, 6, count)
