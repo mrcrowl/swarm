@@ -8,13 +8,14 @@ import (
 // Mapping is
 type Mapping struct {
 	sourceMappingURL string
+	relativePath     string
 	filepath         string
 	contents         string
 }
 
 // NewMapping wraps a sourceMappingURL
-func NewMapping(sourceMappingURL string, filepath string) *Mapping {
-	return &Mapping{sourceMappingURL, filepath, ""}
+func NewMapping(sourceMappingURL string, relativePath string, filepath string) *Mapping {
+	return &Mapping{sourceMappingURL, relativePath, filepath, ""}
 }
 
 // EnsureLoaded ensures the files contents are loaded
@@ -22,6 +23,11 @@ func (mapping *Mapping) EnsureLoaded() {
 	if mapping.contents == "" {
 		mapping.LoadContents()
 	}
+}
+
+// RelativePath returns the path relative to the entry point
+func (mapping *Mapping) RelativePath() string {
+	return mapping.relativePath
 }
 
 // Contents returns the contents of the .map file (if loaded)

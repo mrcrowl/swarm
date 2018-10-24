@@ -130,7 +130,7 @@ func TestSourceMap(t *testing.T) {
 			setup()
 			f := getSampleFile(tc.id, tc.ext, tc.contents)
 			f.EnsureLoaded(nil)
-			has := f.SourceMap()
+			has := f.SourceMap(".")
 			assert.Equal(t, tc.expected, has != nil)
 			teardown()
 		})

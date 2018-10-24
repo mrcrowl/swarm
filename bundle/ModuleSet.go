@@ -117,9 +117,10 @@ func (set *ModuleSet) GenerateHTTPHandlers() map[string]http.HandlerFunc {
 
 	handlers := map[string]http.HandlerFunc{}
 	for _, module := range set.modules {
-		handlers["/"+module.PrimaryEntryPoint()+".js"] = createJSHandler(module)
+		entryPoint := module.PrimaryEntryPoint()
+		handlers["/"+entryPoint+".js"] = createJSHandler(module)
 		if set.runtimeConfig.SourceMapsEnabled() {
-			handlers["/"+module.PrimaryEntryPoint()+".js.map"] = createMapHandler(module)
+			handlers["/"+entryPoint+".js.map"] = createMapHandler(module)
 		}
 	}
 	return handlers

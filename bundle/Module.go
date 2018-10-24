@@ -3,7 +3,6 @@ package bundle
 import (
 	"fmt"
 	"log"
-	"path"
 	"swarm/config"
 	"swarm/dep"
 	"swarm/monitor"
@@ -50,11 +49,6 @@ func (mod *Module) PrimaryEntryPoint() string {
 	return mod.description.RelativePath
 }
 
-// PrimaryEntryPointFilename gets the filename of the primary entry/output point
-func (mod *Module) PrimaryEntryPointFilename() string {
-	return path.Base(mod.description.RelativePath)
-}
-
 func (mod *Module) excludedFilesets() []*source.FileSet {
 	numExcludedModules := len(mod.excludedModules)
 	if numExcludedModules == 0 {
@@ -90,7 +84,7 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 }
 
 func (mod *Module) generateArtefacts() {
-	mod.bundledJavascript, mod.bundledSourcemap = mod.bundler.Bundle(mod.fileset, mod.runtimeConfig, mod.PrimaryEntryPointFilename())
+	mod.bundledJavascript, mod.bundledSourcemap = mod.bundler.Bundle(mod.fileset, mod.runtimeConfig, mod.PrimaryEntryPoint())
 	mod.fileset.ClearDirty()
 	fmt.Printf("   Bundled: /%s.js (%d files)\n", mod.PrimaryEntryPoint(), mod.fileset.Count())
 }

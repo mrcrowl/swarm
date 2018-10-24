@@ -14,5 +14,5 @@ func NewRuntimeConfig(buildPath string, baseHref string) *RuntimeConfig {
 
 // SourceMapsEnabled ...
 func (rtc *RuntimeConfig) SourceMapsEnabled() bool {
-	return false // TEMPORARILY DISABLED UNTIL I CAN GET IT PERFORMING NICELY :(
+	return true // TEMPORARILY DISABLED UNTIL I CAN GET IT PERFORMING NICELY :(
 }

@@ -2,13 +2,14 @@ package source
 
 import (
 	"path/filepath"
+	"strings"
 	"swarm/config"
 	"swarm/io"
 )
 
 // File represents a single file containing source code
 type File struct {
-	ID        string
+	ID        string // also happens to be the root-relative url for this file
 	Filepath  string
 	ext       string
 	contents  FileContents
@@ -23,6 +24,19 @@ func newFile(id string, absoluteFilepath string) *File {
 		Filepath: absoluteFilepath,
 		ext:      ext,
 	}
+}
+
+func (file *File) rootRelativeURL() string { return file.ID }
+
+// PathRelativeTo returns a path relative to another path
+func (file *File) PathRelativeTo(runtimeConfig *config.RuntimeConfig, anotherPath string) string {
+	filePath := file.rootRelativeURL()
+	basedAnotherPath, err := filepath.Rel(runtimeConfig.BaseHref, anotherPath)
+	relativeFilepath, err := filepath.Rel(basedAnotherPath, filePath)
+	if err != nil {
+		return file.rootRelativeURL()
+	}
+	return strings.Replace(relativeFilepath, "\\", "/", -1) + ".ts"
 }
 
 // Ext gets a file's extension
@@ -77,17 +91,21 @@ func (file *File) UnloadContents() {
 
 // SourceMap gets a Mapping that wraps the sourceMappingURL found within the file's contents.
 // This only returns true if the file's contents have been loaded
-func (file *File) SourceMap() *Mapping {
-	if file.contents == nil {
-		return nil
-	}
+func (file *File) SourceMap(runtimeConfig *config.RuntimeConfig, entryPointRootRelativePath string) *Mapping {
+	if file.sourceMap == nil {
+		if file.contents == nil {
+			return nil
+		}
 
-	sourceMappingURL := file.contents.SourceMappingURL()
-	if sourceMappingURL == "" {
-		return nil
+		sourceMappingURL := file.contents.SourceMappingURL()
+		if sourceMappingURL == "" {
+			return nil
+		}
+		relativePath := file.PathRelativeTo(runtimeConfig, entryPointRootRelativePath)
+		absoluteFilepath := filepath.Join(filepath.Dir(file.Filepath), sourceMappingURL)
+		file.sourceMap = NewMapping(sourceMappingURL, relativePath, absoluteFilepath)
 	}
-	absoluteFilepath := filepath.Join(filepath.Dir(file.Filepath), sourceMappingURL)
-	return NewMapping(sourceMappingURL, absoluteFilepath)
+	return file.sourceMap
 }
 
 // BundleBody returns a list of lines from the body ready to include in a SystemJSBundle

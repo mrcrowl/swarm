@@ -1,8 +1,8 @@
 package bundle
 
 import (
+	"path"
 	"sort"
-	"strconv"
 	"strings"
 	"swarm/config"
 	"swarm/source"
@@ -29,22 +29,25 @@ func (nf ByFilepath) Less(i, j int) bool {
 }
 
 // Bundle concatenates files in a FileSet into a single file
-func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeConfig, entryPointFilename string) (javascript string, sourcemap string) {
+func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeConfig, entryPointPath string) (javascript string, sourcemap string) {
 	var jsBuilder strings.Builder
-	mapBuilder := newSourceMapBuilder(entryPointFilename)
+	entryPointFilename := path.Base(entryPointPath)
+	mapBuilder := newSourceMapBuilder(entryPointFilename, fileset.Count())
 	files := fileset.Files()
-	lineNumber := 0
+	lineIndex := 0
 	sort.Sort(ByFilepath(files))
 	for _, file := range files {
 		file.EnsureLoaded(runtimeConfig)
-		if sourceMap := file.SourceMap(); sourceMap != nil {
-			sourceMap.EnsureLoaded()
-			mapBuilder.WriteSection(lineNumber, 0, sourceMap.Contents())
-		}
+		startingLineIndex := 0
 		for _, line := range file.BundleBody() {
 			jsBuilder.WriteString(line)
 			jsBuilder.WriteString("\n")
-			lineNumber++
+			lineIndex++
+		}
+		if sourceMap := file.SourceMap(runtimeConfig, entryPointPath); sourceMap != nil {
+			lineCount := lineIndex - startingLineIndex
+			sourceMap.EnsureLoaded()
+			mapBuilder.AddSourcemap(lineIndex, lineCount, sourceMap.RelativePath(), sourceMap.Contents())
 		}
 	}
 	javascript = jsBuilder.String()
@@ -52,35 +55,87 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 	return
 }
 
-type sourceMapBuilder struct {
-	sb        *strings.Builder
-	seenFirst bool
+type sourceMap struct {
+	startLineIndex int
+	lineCount      int
+	path           string
+	contents       string
 }
 
-func newSourceMapBuilder(filename string) *sourceMapBuilder {
-	sb := &strings.Builder{}
-	sb.WriteString(`{"version":3,"file":"`)
-	sb.WriteString(filename)
-	sb.WriteString(`","sections":[`)
-	return &sourceMapBuilder{sb, false}
+type sourceMapBuilder struct {
+	filename string
+	sources  []*sourceMap
+}
+
+func newSourceMapBuilder(filename string, capacity int) *sourceMapBuilder {
+	return &sourceMapBuilder{
+		filename: filename,
+		sources:  make([]*sourceMap, 0, capacity),
+	}
+}
+
+func (smb *sourceMapBuilder) AddSourcemap(line int, lineCount int, path string, sourceMapContents string) {
+	source := &sourceMap{
+		line,
+		lineCount,
+		path,
+		sourceMapContents,
+	}
+	smb.sources = append(smb.sources, source)
 }
 
 func (smb *sourceMapBuilder) String() string {
-	smb.sb.WriteString(`]}`)
-	return smb.sb.String()
+	var sb strings.Builder
+	sb.WriteString(`{"version":3,"file":"`)
+	sb.WriteString(smb.filename)
+	sb.WriteString(`.js","sources":[`)
+	first := true
+	for _, source := range smb.sources {
+		if first {
+			first = false
+		} else {
+			sb.WriteByte(',')
+		}
+		sb.WriteString("\"" + source.path + "\"")
+	}
+	sb.WriteString(`],"mappings":"`)
+	sb.WriteString(smb.GenerateMappings())
+	sb.WriteString(`"}`)
+	return sb.String()
 }
 
-func (smb *sourceMapBuilder) WriteSection(line int, column int, sourceMapContents string) {
-	if !smb.seenFirst {
-		smb.seenFirst = true
-	} else {
-		smb.sb.WriteString(",")
+func (smb *sourceMapBuilder) GenerateMappings() string {
+	totalLineCount := 0
+	for _, source := range smb.sources {
+		totalLineCount += source.lineCount
 	}
-	smb.sb.WriteString("\n")
-	smb.sb.WriteString(`{"offset":{"line":`)
-	smb.sb.WriteString(strconv.Itoa(line))
-	smb.sb.WriteString(`,"column":`)
-	smb.sb.WriteString(strconv.Itoa(column))
-	smb.sb.WriteString(`},"map":`)
-	smb.sb.WriteString(sourceMapContents) // <-- the actual sourcemap file we're injecting
+	return strings.Repeat(";", totalLineCount)
 }
+
+// func newSourceMapBuilder(filename string) *sourceMapBuilder {
+// 	sb := &strings.Builder{}
+// 	sb.WriteString(`{"version":3,"file":"`)
+// 	sb.WriteString(filename)
+// 	sb.WriteString(`","sections":[`)
+// 	return &sourceMapBuilder{sb, false}
+// }
+
+// func (smb *sourceMapBuilder) String() string {
+// 	smb.sb.WriteString(`]}`)
+// 	return smb.sb.String()
+// }
+
+// func (smb *sourceMapBuilder) WriteSection(line int, column int, sourceMapContents string) {
+// 	if !smb.seenFirst {
+// 		smb.seenFirst = true
+// 	} else {
+// 		smb.sb.WriteString(",")
+// 	}
+// 	smb.sb.WriteString("\n")
+// 	smb.sb.WriteString(`{"offset":{"line":`)
+// 	smb.sb.WriteString(strconv.Itoa(line))
+// 	smb.sb.WriteString(`,"column":`)
+// 	smb.sb.WriteString(strconv.Itoa(column))
+// 	smb.sb.WriteString(`},"map":`)
+// 	smb.sb.WriteString(sourceMapContents) // <-- the actual sourcemap file we're injecting
+// }
