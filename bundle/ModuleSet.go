@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"swarm/config"
 	"swarm/monitor"
 	"swarm/source"
@@ -12,8 +13,9 @@ import (
 
 // ModuleSet is
 type ModuleSet struct {
-	modules []*Module
-	mutex   *sync.Mutex
+	modules       []*Module
+	mutex         *sync.Mutex
+	runtimeConfig *config.RuntimeConfig
 }
 
 // CreateModuleSet creates a ModuleSet from a list of NormalisedModuleDescriptions
@@ -104,16 +106,21 @@ func (set *ModuleSet) GenerateHTTPHandlers() map[string]http.HandlerFunc {
 			io.WriteString(w, "//# sourceMappingURL=app.js.map")
 		}
 	}
+
 	createMapHandler := func(module *Module) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, module.bundledSourcemap)
+			sourceMap := module.bundledSourcemap
+			sourceMap = strings.Replace(sourceMap, `["BaseController.ts"]`, `["ui/base/BaseController.ts"]`, 1)
+			io.WriteString(w, sourceMap)
 		}
 	}
 
 	handlers := map[string]http.HandlerFunc{}
 	for _, module := range set.modules {
 		handlers["/"+module.PrimaryEntryPoint()+".js"] = createJSHandler(module)
-		handlers["/"+module.PrimaryEntryPoint()+".js.map"] = createMapHandler(module)
+		if set.runtimeConfig.SourceMapsEnabled() {
+			handlers["/"+module.PrimaryEntryPoint()+".js.map"] = createMapHandler(module)
+		}
 	}
 	return handlers
 }

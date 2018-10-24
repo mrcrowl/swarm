@@ -76,11 +76,11 @@ func (smb *sourceMapBuilder) WriteSection(line int, column int, sourceMapContent
 	} else {
 		smb.sb.WriteString(",")
 	}
+	smb.sb.WriteString("\n")
 	smb.sb.WriteString(`{"offset":{"line":`)
 	smb.sb.WriteString(strconv.Itoa(line))
-	smb.sb.WriteString(`, "column":`)
+	smb.sb.WriteString(`,"column":`)
 	smb.sb.WriteString(strconv.Itoa(column))
 	smb.sb.WriteString(`},"map":`)
 	smb.sb.WriteString(sourceMapContents) // <-- the actual sourcemap file we're injecting
-	smb.sb.WriteString(`}`)
 }

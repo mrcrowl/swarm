@@ -55,11 +55,14 @@ func (server *Server) Start() {
 		mux.HandleFunc(url, handler)
 	}
 
-	// // HACK:
+	// HACK:
 	// mux.HandleFunc("/app/src/ep/app.js.map", func(w http.ResponseWriter, r *http.Request) {
 	// 	http.ServeFile(w, r, "C:\\WF\\Home\\topo\\app\\src\\ep\\app.build.js.map")
 	// })
-	// // ENDHACK
+	// mux.HandleFunc("/app/src/ep/ui/base/BaseController.ts", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.ServeFile(w, r, "C:\\WF\\LP\\Web\\App\\app\\src\\ep\\ui\\base\\BaseController.ts")
+	// })
+	// ENDHACK
 
 	server.srv = &http.Server{
 		Addr:    makeServerAddress(server.port),

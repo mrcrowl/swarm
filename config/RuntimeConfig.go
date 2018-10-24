@@ -11,3 +11,8 @@ type RuntimeConfig struct {
 func NewRuntimeConfig(buildPath string, baseHref string) *RuntimeConfig {
 	return &RuntimeConfig{buildPath, baseHref}
 }
+
+// SourceMapsEnabled ...
+func (rtc *RuntimeConfig) SourceMapsEnabled() bool {
+	return false // TEMPORARILY DISABLED UNTIL I CAN GET IT PERFORMING NICELY :(
+}
