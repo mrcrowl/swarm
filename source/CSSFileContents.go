@@ -14,8 +14,13 @@ type CSSFileContents struct {
 }
 
 // BundleLines returns a list of lines ready to include in a SystemJSBundle
-func (sfc *CSSFileContents) BundleLines() []string {
-	return sfc.lines
+func (cssfc *CSSFileContents) BundleLines() []string {
+	return cssfc.lines
+}
+
+// SourceMappingURL returns ""
+func (cssfc *CSSFileContents) SourceMappingURL() string {
+	return ""
 }
 
 const cssTemplate = `System.register("%s", [], function (_export, _context) {

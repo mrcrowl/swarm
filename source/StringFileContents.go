@@ -12,6 +12,11 @@ func (sfc *StringFileContents) BundleLines() []string {
 	return sfc.lines
 }
 
+// SourceMappingURL returns ""
+func (sfc *StringFileContents) SourceMappingURL() string {
+	return ""
+}
+
 const template = `System.register("%s", [], function (_export, _context) {
 	"use strict";
 

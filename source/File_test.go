@@ -78,3 +78,61 @@ func TestExt(t *testing.T) {
 	assert.Equal(t, ".css", f.Ext())
 	teardown()
 }
+
+var hasSourceMapCases = map[string]struct {
+	id       string
+	ext      string
+	contents string
+	expected bool
+}{
+	"css-with": {
+		id:       "css",
+		ext:      ".css",
+		contents: "body { background: green }\n//# sourceMappingURL=abcd.css.map",
+		expected: false, // css source mapa not yet supported in swarm
+	},
+	"js-with": {
+		id:  "js",
+		ext: ".js",
+		contents: `System.register([], function (exports_1, context_1) {
+var Second;
+var __moduleName = context_1 && context_1.id;
+return {
+	setters: [],
+	execute: function () {
+		Second = /** @class */ (function () {
+			function Second() {
+			}
+			Second.Go = function () {
+				return "Second";
+			};
+			return Second;
+		}());
+		exports_1("Second", Second);
+	}
+};
+});
+//# sourceMappingURL=Second.js.map`,
+		expected: true,
+	},
+	"js-without": {
+		id:  "js2",
+		ext: ".js",
+		contents: `System.register([], function (exports_1, context_1) {
+});`,
+		expected: false,
+	},
+}
+
+func TestSourceMap(t *testing.T) {
+	for name, tc := range hasSourceMapCases {
+		t.Run(name, func(t *testing.T) {
+			setup()
+			f := getSampleFile(tc.id, tc.ext, tc.contents)
+			f.EnsureLoaded(nil)
+			has := f.SourceMap()
+			assert.Equal(t, tc.expected, has != nil)
+			teardown()
+		})
+	}
+}

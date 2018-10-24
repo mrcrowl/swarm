@@ -55,6 +55,12 @@ func (server *Server) Start() {
 		mux.HandleFunc(url, handler)
 	}
 
+	// // HACK:
+	// mux.HandleFunc("/app/src/ep/app.js.map", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.ServeFile(w, r, "C:\\WF\\Home\\topo\\app\\src\\ep\\app.build.js.map")
+	// })
+	// // ENDHACK
+
 	server.srv = &http.Server{
 		Addr:    makeServerAddress(server.port),
 		Handler: mux,

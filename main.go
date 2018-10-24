@@ -58,10 +58,18 @@ func main() {
 }
 
 func chooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
+	// build specified as first command line argument
 	if len(os.Args) > 1 {
 		buildName := os.Args[1]
 		if build, found := builds[buildName]; found {
 			return build
+		}
+	}
+
+	// single build?
+	if len(builds) == 1 {
+		for k := range builds {
+			return builds[k]
 		}
 	}
 
