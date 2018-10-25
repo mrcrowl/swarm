@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -103,7 +104,7 @@ func (set *ModuleSet) GenerateHTTPHandlers() map[string]http.HandlerFunc {
 	createJSHandler := func(module *Module) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			io.WriteString(w, module.bundledJavascript)
-			io.WriteString(w, "//# sourceMappingURL=app.js.map")
+			io.WriteString(w, fmt.Sprintf("//# sourceMappingURL=%s", module.SourceMapName()))
 		}
 	}
 

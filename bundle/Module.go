@@ -3,6 +3,7 @@ package bundle
 import (
 	"fmt"
 	"log"
+	"path"
 	"swarm/config"
 	"swarm/dep"
 	"swarm/monitor"
@@ -38,6 +39,11 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription, 
 // Name gets the name of the module
 func (mod *Module) Name() string {
 	return mod.description.Name
+}
+
+// SourceMapName gets the name to associate with this module's source map
+func (mod *Module) SourceMapName() string {
+	return path.Base(mod.Name()) + ".js.map"
 }
 
 func (mod *Module) dirty() bool {
