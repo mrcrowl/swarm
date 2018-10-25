@@ -67,48 +67,50 @@ func TestNewBuilder(t *testing.T) {
 	assert.Equal(t, 1, sut.linkCount())
 }
 
-func TestCalcBundleOrder(t *testing.T) {
-	imports := []*Import{
-		NewImport("Config"),
-		NewImport("app/index.html"),
-		NewImport("app/src/ConfigApp"),
-		NewImport("app/src/ep/app.css"),
-		NewImport("app/src/ep/app"),
-		NewImport("app/src/ep/AppController"),
-		NewImport("common/Common"),
-		NewImport("common/time/TimeBoxManager"),
-	}
-	links := []*DependencyLink{
-		NewDependencyLink("app/src/ConfigApp", []string{"Config", "app/index.html", "app/src/ep/app.css", "common/Common", "app/src/ep/app"}),
-		NewDependencyLink("app/src/ep/app", []string{"app/src/ep/AppController", "common/Common"}),
-		NewDependencyLink("common/Common", []string{"common/time/TimeBoxManager"}),
-	}
-	ws := NewWorkspace("C:\\WF\\LP\\web\\App")
-	sut := NewFileSet(imports, links, ws)
-	assert.Equal(t, sut.Count(), 8)
-	assert.Equal(t, sut.linkCount(), 3)
-	order := sut.calcBundleOrder()
+// Topologically-sorted builds weren't required for SystemJS after all.
+// ==================================================================
+// func TestCalcBundleOrder(t *testing.T) {
+// 	imports := []*Import{
+// 		NewImport("Config"),
+// 		NewImport("app/index.html"),
+// 		NewImport("app/src/ConfigApp"),
+// 		NewImport("app/src/ep/app.css"),
+// 		NewImport("app/src/ep/app"),
+// 		NewImport("app/src/ep/AppController"),
+// 		NewImport("common/Common"),
+// 		NewImport("common/time/TimeBoxManager"),
+// 	}
+// 	links := []*DependencyLink{
+// 		NewDependencyLink("app/src/ConfigApp", []string{"Config", "app/index.html", "app/src/ep/app.css", "common/Common", "app/src/ep/app"}),
+// 		NewDependencyLink("app/src/ep/app", []string{"app/src/ep/AppController", "common/Common"}),
+// 		NewDependencyLink("common/Common", []string{"common/time/TimeBoxManager"}),
+// 	}
+// 	ws := NewWorkspace("C:\\WF\\LP\\web\\App")
+// 	sut := NewFileSet(imports, links, ws)
+// 	assert.Equal(t, sut.Count(), 8)
+// 	assert.Equal(t, sut.linkCount(), 3)
+// 	order := sut.calcBundleOrder()
 
-	common := indexOf("common/Common", order)
-	timeboxmanager := indexOf("common/time/TimeBoxManager", order)
-	config := indexOf("Config", order)
-	indexhtml := indexOf("app/index.html", order)
-	appcss := indexOf("app/src/ep/app.css", order)
-	appcontroller := indexOf("app/src/ep/AppController", order)
-	app := indexOf("app/src/ep/app", order)
-	configapp := indexOf("app/src/ConfigApp", order)
+// 	common := indexOf("common/Common", order)
+// 	timeboxmanager := indexOf("common/time/TimeBoxManager", order)
+// 	config := indexOf("Config", order)
+// 	indexhtml := indexOf("app/index.html", order)
+// 	appcss := indexOf("app/src/ep/app.css", order)
+// 	appcontroller := indexOf("app/src/ep/AppController", order)
+// 	app := indexOf("app/src/ep/app", order)
+// 	configapp := indexOf("app/src/ConfigApp", order)
 
-	assert.True(t, configapp > config)
-	assert.True(t, configapp > indexhtml)
-	assert.True(t, configapp > appcss)
-	assert.True(t, configapp > common)
-	assert.True(t, configapp > app)
-	assert.True(t, app > appcontroller)
-	assert.True(t, app > common)
-	assert.True(t, common > timeboxmanager)
-	assert.True(t, configapp > timeboxmanager)
-	assert.True(t, app > timeboxmanager)
-}
+// 	assert.True(t, configapp > config)
+// 	assert.True(t, configapp > indexhtml)
+// 	assert.True(t, configapp > appcss)
+// 	assert.True(t, configapp > common)
+// 	assert.True(t, configapp > app)
+// 	assert.True(t, app > appcontroller)
+// 	assert.True(t, app > common)
+// 	assert.True(t, common > timeboxmanager)
+// 	assert.True(t, configapp > timeboxmanager)
+// 	assert.True(t, app > timeboxmanager)
+// }
 
 func indexOf(element string, data []string) int {
 	for k, v := range data {

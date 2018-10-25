@@ -2,7 +2,6 @@ package source
 
 import (
 	"fmt"
-	"sort"
 )
 
 // FileSet is
@@ -76,13 +75,6 @@ func (fs *FileSet) Files() []*File {
 		result[i] = file
 		i++
 	}
-	// for _, id := range fs.calcBundleOrder() {
-	// 	if file, found := fs.index[id]; found {
-	// 		result = append(result, file)
-	// 	} else {
-	// 		fmt.Printf("WARN: Files could not find file %s\n", id)
-	// 	}
-	// }
 	return result
 }
 
@@ -122,7 +114,12 @@ func (fs *FileSet) AddLink(link *DependencyLink) bool {
 
 	for _, dependencyID := range link.dependencyIDs {
 		if !fs.Contains(dependencyID) {
-			fmt.Printf("ERROR: AddLink() dependency file doesn't exist in the FileSet, ID: %s\n", dependencyID)
+			// Commented out this warning for now, because builds
+			// in the CP modules often link to files that are in
+			// other builds.  Haven't got a solution yet.
+			// -- BC 2018-10-25
+			//
+			// fmt.Printf("ERROR: AddLink() dependency file doesn't exist in the FileSet, ID: %s\n", dependencyID)
 			return false
 		}
 	}
@@ -174,24 +171,24 @@ func (fs *FileSet) nonEmpty() bool {
 	return fs.Count() > 0
 }
 
-func (fs *FileSet) calcBundleOrder() []string {
-	graph := NewIDGraph(fs.links)
-	topoSortedIDs := graph.SortTopologically(fs.sortedFileIDs())
-	// if len(leftOverIDs) > 0 {
-	// 	graph.analyseLeftoverIDs(leftOverIDs)
-	// }
+// func (fs *FileSet) calcBundleOrder() []string {
+// 	graph := NewIDGraph(fs.links)
+// 	topoSortedIDs := graph.SortTopologically(fs.sortedFileIDs())
+// 	// if len(leftOverIDs) > 0 {
+// 	// 	graph.analyseLeftoverIDs(leftOverIDs)
+// 	// }
 
-	return topoSortedIDs
-}
+// 	return topoSortedIDs
+// }
 
-func (fs *FileSet) sortedFileIDs() []string {
-	ids := make([]string, len(fs.index))
-	i := 0
-	for id := range fs.index {
-		ids[i] = id
-		i++
-	}
+// func (fs *FileSet) sortedFileIDs() []string {
+// 	ids := make([]string, len(fs.index))
+// 	i := 0
+// 	for id := range fs.index {
+// 		ids[i] = id
+// 		i++
+// 	}
 
-	sort.StringSlice(ids).Sort()
-	return ids
-}
+// 	sort.StringSlice(ids).Sort()
+// 	return ids
+// }

@@ -66,7 +66,6 @@ func (smb *SourceMapBuilder) GenerateMappings() string {
 
 		mappings := smap.OffsetMappings(lastMappingsDelta)
 		sourceMapLineCount, lastMappingsDelta = smap.PlayMappings()
-		// segmentDelta = segmentDelta.add(lastMappingsDelta)
 		lastMappingsDelta.sourceFile = 1
 
 		sb.WriteString(mappings)
