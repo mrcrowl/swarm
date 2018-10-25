@@ -18,6 +18,7 @@ type SourceMap struct {
 }
 
 type sourceMap struct {
+	spacerLines   int
 	fileLineCount int
 	path          string
 	contents      string

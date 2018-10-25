@@ -20,8 +20,9 @@ func NewSourceMapBuilder(filename string, capacity int) *SourceMapBuilder {
 }
 
 // AddSourceMap adds a source map to be included in the build
-func (smb *SourceMapBuilder) AddSourceMap(fileLineCount int, path string, sourceMapContents string) {
+func (smb *SourceMapBuilder) AddSourceMap(spacerLines int, fileLineCount int, path string, sourceMapContents string) {
 	source := &sourceMap{
+		spacerLines,
 		fileLineCount,
 		path,
 		sourceMapContents,
@@ -52,18 +53,21 @@ func (smb *SourceMapBuilder) String() string {
 // GenerateMappings outputs a string of the compiled sourcemap
 func (smb *SourceMapBuilder) GenerateMappings() string {
 	var sb strings.Builder
-	var segmentDelta = Segment{0, 0, 0, 0}
+	var lastMappingsDelta = Segment{0, 0, 0, 0}
+	var sourceMapLineCount int
 	for _, source := range smb.sources {
+		sb.WriteString(strings.Repeat(";", source.spacerLines))
+
 		smap, err := ParseSourceMapJSON(source.contents)
 		if err != nil {
 			log.Printf("ERROR parsing source map: " + source.path)
 			continue
 		}
 
-		sourceMapLineCount, lastMappingsDelta := smap.PlayMappings()
-		mappings := smap.OffsetMappings(segmentDelta)
-		segmentDelta = segmentDelta.add(lastMappingsDelta)
-		segmentDelta.sourceFile = 1
+		mappings := smap.OffsetMappings(lastMappingsDelta)
+		sourceMapLineCount, lastMappingsDelta = smap.PlayMappings()
+		// segmentDelta = segmentDelta.add(lastMappingsDelta)
+		lastMappingsDelta.sourceFile = 1
 
 		sb.WriteString(mappings)
 		additionalSeparators := 1 + (source.fileLineCount - sourceMapLineCount)

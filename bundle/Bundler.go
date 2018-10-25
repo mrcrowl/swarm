@@ -34,8 +34,13 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 	var jsBuilder strings.Builder
 	entryPointFilename := path.Base(entryPointPath)
 	mapBuilder := devtools.NewSourceMapBuilder(entryPointFilename, fileset.Count())
+
+	// sort by filepath
 	files := fileset.Files()
 	sort.Sort(ByFilepath(files))
+
+	lastSourceMapLineIndex := 0
+	lineIndex := 0
 	for _, file := range files {
 		file.EnsureLoaded(runtimeConfig)
 		lineCount := 0
@@ -43,10 +48,13 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 			jsBuilder.WriteString(line)
 			jsBuilder.WriteString("\n")
 			lineCount++
+			lineIndex++
 		}
 		if sourceMap := file.SourceMap(runtimeConfig, entryPointPath); sourceMap != nil {
+			spacerLines := lineIndex - lastSourceMapLineIndex - lineCount
+			lastSourceMapLineIndex = lineIndex
 			sourceMap.EnsureLoaded()
-			mapBuilder.AddSourceMap(lineCount, sourceMap.RelativePath(), sourceMap.Contents())
+			mapBuilder.AddSourceMap(spacerLines, lineCount, sourceMap.RelativePath(), sourceMap.Contents())
 		}
 	}
 	javascript = jsBuilder.String()
