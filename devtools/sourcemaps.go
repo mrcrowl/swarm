@@ -21,17 +21,38 @@ type line struct {
 	segments [][]int
 }
 
+// ParseSourceMapJSON parses a source map from a json string
+func ParseSourceMapJSON(sourceMapJSON string) (*SourceMap, error) {
+	var sm *SourceMap
+	err := json.Unmarshal([]byte(sourceMapJSON), &sm)
+	if err != nil {
+		return nil, errors.New("Invalid JSON in source map: " + err.Error())
+	}
+	return sm, nil
+}
+
+// OffsetMappingsSourceFileIndex replaces the source file index of the first
+// VLQ in the Mappings field of this smap.  This is used for concatenating multiple source maps together.
+// See: https://sourcemaps.info/spec.html
+//      http://www.murzwin.com/base64vlq.html
+func (smap *SourceMap) OffsetMappingsSourceFileIndex(fileIndex int) string {
+	offsetMappings := replaceFirstVLQ(smap.Mappings, func(values []int) []int {
+		values[1] += fileIndex
+		return values
+	})
+	return offsetMappings
+}
+
 /*
-YAGC = [12,0,3,1]
-[
-	12, // generated COLUMN (reset with each line, relative within same line)
-	0,  // source FILE index (relative to last, except for first) <-- ONLY THING THAT NEEDS TO CHANGE
-	4,  // source LINE index (relative to last, except for first)
-	1,  // source COLUMN index (relative to last, except for first)
-]
+	Mappings := ";;;;YAGC;KAAK;;;;"
 
- ";;;;AAAA;KAAK;;;;"
-
+	YAGC = [12,0,3,1]
+	[
+		12, // generated COLUMN (reset with each line, relative within same line)
+		0,  // source FILE index (relative to last, except for first) <-- ONLY THING THAT NEEDS TO CHANGE
+		4,  // source LINE index (relative to last, except for first)
+		1,  // source COLUMN index (relative to last, except for first)
+	]
 */
 
 func nextNonSeparator(maps string, startPos int) int {
@@ -67,23 +88,23 @@ func findFirstVLQ(maps string) (start int, end int) {
 
 type vlqReplaceFn func([]int) []int
 
-func replaceFirstVLQ(maps string, replaceFn vlqReplaceFn) string {
-	start, end := findFirstVLQ(maps)
+func replaceFirstVLQ(mappings string, replaceFn vlqReplaceFn) string {
+	start, end := findFirstVLQ(mappings)
 	if start < 0 || end < 0 {
-		return maps
+		return mappings
 	}
 
-	before := maps[:start]
-	after := maps[end:]
-	vlq := maps[start:end]
+	before := mappings[:start]
+	after := mappings[end:]
+	vlq := mappings[start:end]
 	values := Decode(vlq)
 	replacementValues := replaceFn(values)
 	replacementVlq := Encode(replacementValues)
 	return before + replacementVlq + after
 }
 
-func parseMappings(maps string) []*line {
-	lineStrings := strings.Split(maps, ";")
+func parseMappings(mappings string) []*line {
+	lineStrings := strings.Split(mappings, ";")
 	lines := make([]*line, len(lineStrings))
 	for i, lineString := range lineStrings {
 		lines[i] = parseLineString(lineString)
@@ -101,15 +122,6 @@ func parseLineString(lineString string) *line {
 		segments[i] = Decode(segmentString)
 	}
 	return &line{segments}
-}
-
-func parseSourceMapJSON(sourceMapJSON string) (*SourceMap, error) {
-	var sm *SourceMap
-	err := json.Unmarshal([]byte(sourceMapJSON), &sm)
-	if err != nil {
-		return nil, errors.New("Invalid JSON in source map: " + err.Error())
-	}
-	return sm, nil
 }
 
 const base64Map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
