@@ -51,7 +51,6 @@ func (smb *SourceMapBuilder) String() string {
 
 // GenerateMappings outputs a string of the compiled sourcemap
 func (smb *SourceMapBuilder) GenerateMappings() string {
-	fileIndex := 0
 	var sb strings.Builder
 	var segmentDelta = Segment{0, 0, 0, 0}
 	for _, source := range smb.sources {
@@ -67,9 +66,8 @@ func (smb *SourceMapBuilder) GenerateMappings() string {
 		segmentDelta.sourceFile = 1
 
 		sb.WriteString(mappings)
-		differenceInLineCount := source.fileLineCount - sourceMapLineCount
-		sb.WriteString(strings.Repeat(";", differenceInLineCount+1))
-		fileIndex++
+		additionalSeparators := 1 + (source.fileLineCount - sourceMapLineCount)
+		sb.WriteString(strings.Repeat(";", additionalSeparators))
 	}
 	return sb.String()
 }
