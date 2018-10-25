@@ -1,10 +1,12 @@
 package bundle
 
 import (
+	"log"
 	"path"
 	"sort"
 	"strings"
 	"swarm/config"
+	"swarm/devtools"
 	"swarm/source"
 )
 
@@ -75,7 +77,7 @@ func newSourceMapBuilder(filename string, capacity int) *sourceMapBuilder {
 }
 
 func (smb *sourceMapBuilder) AddSourcemap(line int, lineCount int, path string, sourceMapContents string) {
-	source := &sourceMap{
+	source := &sourceMap{ // TODO         ^^^^^^^^^^^^^^^^^^^^^^^ remove
 		line,
 		lineCount,
 		path,
@@ -105,11 +107,24 @@ func (smb *sourceMapBuilder) String() string {
 }
 
 func (smb *sourceMapBuilder) GenerateMappings() string {
-	totalLineCount := 0
-	for _, source := range smb.sources {
-		totalLineCount += source.lineCount
+	fileIndex := 0
+	var sb strings.Builder
+	for i, source := range smb.sources {
+		smap, err := devtools.ParseSourceMapJSON(source.contents)
+		if err != nil {
+			log.Printf("ERROR parsing source map: " + source.path)
+			continue
+		}
+		offset := 1
+		if i == 0 {
+			offset = 0
+		}
+		mappings := smap.OffsetMappingsSourceFileIndex(offset)
+		sb.WriteString(mappings)
+		sb.WriteByte(';')
+		fileIndex++
 	}
-	return strings.Repeat(";", totalLineCount)
+	return sb.String()
 }
 
 // func newSourceMapBuilder(filename string) *sourceMapBuilder {

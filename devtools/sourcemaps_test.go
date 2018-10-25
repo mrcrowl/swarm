@@ -7,6 +7,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPlayMappings(t *testing.T) {
+	cases := map[string]struct {
+		mappings string
+		expected Segment
+	}{
+		// "zero":   {mappings: "AAAA", expected: segment{0, 0, 0, 0}},
+		// "1234":   {mappings: "ACEG", expected: segment{0, 1, 2, 3}},
+		// "1234;;": {mappings: "ACEG", expected: segment{0, 1, 2, 3}},
+		// ";":      {mappings: "AAAA", expected: segment{0, 0, 0, 0}},
+		// "MED":    {mappings: "AAAA;BBBB;CCCC,ACCC,ABBB,XYZA;ADDD", expected: segment{0, 0, 0, 0}},
+		"LONG": {mappings: ";;;;;;;;;YAGA;gBAAA;gBAIA,CAAC;gBAHiB,QAAE,GAAhB;oBACI,OAAO,qCAAqC,CAAA;gBAChD,CAAC;gBACL,YAAC;YAAD,CAAC,AAJD,IAIC;;QAAC,CAAC", expected: Segment{9, 0, 7, 3}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			smap := &SourceMap{Mappings: tc.mappings}
+			actual := smap.PlayMappings()
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
 const firstJSON = `{
     "version": 3,
     "file": "First.js",
@@ -155,20 +176,20 @@ func TestReplaceFirstVLQ(t *testing.T) {
 	}{
 		"one": {
 			mappings: "YCCA",
-			replacementFn: func(values []int) []int {
-				values[0]++
-				return values
+			replacementFn: func(seg Segment) Segment {
+				seg.generatedColumn++
+				return seg
 			},
 			expected: "aCCA",
 		},
 		"upndown": {
 			mappings: "AAAA",
-			replacementFn: func(values []int) []int {
-				values[0]++
-				values[1]--
-				values[2]++
-				values[3]--
-				return values
+			replacementFn: func(seg Segment) Segment {
+				seg.generatedColumn++
+				seg.sourceFile--
+				seg.sourceLine++
+				seg.sourceColumn--
+				return seg
 			},
 			expected: "CDCD",
 		},
@@ -199,13 +220,13 @@ func TestParseMapsString(t *testing.T) {
 		nil,
 		nil,
 		&line{
-			segments: [][]int{
-				[]int{0, 0, 0, 0},
+			segments: []*Segment{
+				&Segment{0, 0, 0, 0},
 			},
 		},
 		&line{
-			segments: [][]int{
-				[]int{5, 0, 0, 5},
+			segments: []*Segment{
+				&Segment{5, 0, 0, 5},
 			},
 		},
 		nil,
@@ -253,7 +274,7 @@ func TestDecode(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			actual := Decode(tc.vlq)
+			actual := decode(tc.vlq)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -287,7 +308,7 @@ func TestEncode(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			actual := Encode(tc.nums)
+			actual := encode(tc.nums)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}

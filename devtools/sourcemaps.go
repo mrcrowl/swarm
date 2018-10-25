@@ -18,7 +18,15 @@ type SourceMap struct {
 }
 
 type line struct {
-	segments [][]int
+	segments []*Segment
+}
+
+// Segment is a mapping between a source file, line and column --> a generated column
+type Segment struct {
+	generatedColumn int
+	sourceFile      int
+	sourceLine      int
+	sourceColumn    int
 }
 
 // ParseSourceMapJSON parses a source map from a json string
@@ -34,13 +42,35 @@ func ParseSourceMapJSON(sourceMapJSON string) (*SourceMap, error) {
 // OffsetMappingsSourceFileIndex replaces the source file index of the first
 // VLQ in the Mappings field of this smap.  This is used for concatenating multiple source maps together.
 // See: https://sourcemaps.info/spec.html
-//      http://www.murzwin.com/base64vlq.html
+//      http://www.murzwin.com/base64vlq.html (WARNING: the following of source maps, near the bottom, is incorrect on this page!)
 func (smap *SourceMap) OffsetMappingsSourceFileIndex(fileIndex int) string {
-	offsetMappings := replaceFirstVLQ(smap.Mappings, func(values []int) []int {
-		values[1] += fileIndex
-		return values
+	offsetMappings := replaceFirstVLQ(smap.Mappings, func(seg Segment) Segment {
+		seg.sourceFile += fileIndex
+		return seg
 	})
 	return offsetMappings
+}
+
+// PlayMappings loops through the mappings to calculate a "delta" that occurs
+// by applying "the rules".
+func (smap *SourceMap) PlayMappings() Segment {
+	var segDelta Segment
+	for generatedLine, line := range parseMappings(smap.Mappings) {
+		if line == nil {
+			continue
+		}
+		segDelta.generatedColumn = 0
+		for _, seg := range line.segments {
+			segDelta.generatedColumn += seg.generatedColumn
+			segDelta.sourceFile += seg.sourceFile
+			segDelta.sourceLine += seg.sourceLine
+			segDelta.sourceColumn += seg.sourceColumn
+			fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
+				segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
+		}
+		fmt.Println()
+	}
+	return segDelta
 }
 
 /*
@@ -86,7 +116,7 @@ func findFirstVLQ(maps string) (start int, end int) {
 	return
 }
 
-type vlqReplaceFn func([]int) []int
+type vlqReplaceFn func(Segment) Segment
 
 func replaceFirstVLQ(mappings string, replaceFn vlqReplaceFn) string {
 	start, end := findFirstVLQ(mappings)
@@ -97,9 +127,9 @@ func replaceFirstVLQ(mappings string, replaceFn vlqReplaceFn) string {
 	before := mappings[:start]
 	after := mappings[end:]
 	vlq := mappings[start:end]
-	values := Decode(vlq)
+	values := decodeSegment(vlq)
 	replacementValues := replaceFn(values)
-	replacementVlq := Encode(replacementValues)
+	replacementVlq := encodeSegment(replacementValues)
 	return before + replacementVlq + after
 }
 
@@ -117,9 +147,10 @@ func parseLineString(lineString string) *line {
 		return nil
 	}
 	segmentStrings := strings.Split(lineString, ",")
-	segments := make([][]int, len(segmentStrings))
+	segments := make([]*Segment, len(segmentStrings))
 	for i, segmentString := range segmentStrings {
-		segments[i] = Decode(segmentString)
+		seg := decodeSegment(segmentString)
+		segments[i] = &seg
 	}
 	return &line{segments}
 }
@@ -153,9 +184,23 @@ func intToByte(i int) byte {
 	panic(fmt.Sprintf("intToByte received int out of range: %d", i))
 }
 
-// Decode decodes a base-64 VLQ string to a list of integers
-func Decode(s string) []int {
-	result := make([]int, 0, 8)
+// decode decodes a base-64 VLQ string to a strongly-typed segment
+func decodeSegment(s string) Segment {
+	values := decode(s)
+	if len(values) >= 4 {
+		return Segment{
+			generatedColumn: values[0],
+			sourceFile:      values[1],
+			sourceLine:      values[2],
+			sourceColumn:    values[3],
+		}
+	}
+	panic(fmt.Sprintf("Encountered decode result with fewer than 4 values: %#v", values))
+}
+
+// decode decodes a base-64 VLQ string to a list of integers
+func decode(s string) []int {
+	result := make([]int, 0, 4)
 	shift := uint(0)
 	value := 0
 
@@ -188,9 +233,16 @@ func Decode(s string) []int {
 	return result
 }
 
-// Encode encodes a list of numbers to a VLQ string
-func Encode(values []int) string {
-	result := make([]byte, 0, 16)
+// encode encodes a list of numbers to a VLQ string
+
+func encodeSegment(seg Segment) string {
+	values := []int{seg.generatedColumn, seg.sourceFile, seg.sourceLine, seg.sourceColumn}
+	return encode(values)
+}
+
+// encode encodes a list of numbers to a VLQ string
+func encode(values []int) string {
+	result := make([]byte, 0, 8)
 	for _, n := range values {
 		result = append(result, encodeInteger(n)...)
 	}
