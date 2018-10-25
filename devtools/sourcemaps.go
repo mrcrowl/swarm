@@ -18,10 +18,9 @@ type SourceMap struct {
 }
 
 type sourceMap struct {
-	startLineIndex int
-	lineCount      int
-	path           string
-	contents       string
+	fileLineCount int
+	path          string
+	contents      string
 }
 
 type line struct {
@@ -36,11 +35,11 @@ type Segment struct {
 	sourceColumn    int
 }
 
-func (seg *Segment) inverse() Segment {
-	return Segment{0, -seg.sourceFile, -seg.sourceLine, -seg.sourceColumn}
+func (seg *Segment) adjustForSource() Segment {
+	return Segment{0, seg.sourceFile, -seg.sourceLine, -seg.sourceColumn}
 }
 
-func (seg *Segment) add(other *Segment) Segment {
+func (seg *Segment) add(other Segment) Segment {
 	return Segment{
 		seg.generatedColumn + other.generatedColumn,
 		seg.sourceFile + other.sourceFile,
@@ -59,35 +58,36 @@ func ParseSourceMapJSON(sourceMapJSON string) (*SourceMap, error) {
 	return sm, nil
 }
 
-// OffsetMappingsSourceFileIndex replaces the source file index of the first
+// OffsetMappings replaces the source file index of the first
 // VLQ in the Mappings field of this smap.  This is used for concatenating multiple source maps together.
 // See: https://sourcemaps.info/spec.html
-//      http://www.murzwin.com/base64vlq.html (WARNING: the following of source maps, near the bottom, is incorrect on this page!)
-func (smap *SourceMap) OffsetMappingsSourceFileIndex(fileIndex int) string {
+//      http://www.murzwin.com/base64vlq.html (WARNING: the ability to "play" source maps, near the bottom of this page is incorrect for this site!)
+func (smap *SourceMap) OffsetMappings(segDelta Segment) string {
 	offsetMappings := replaceFirstVLQ(smap.Mappings, func(seg Segment) Segment {
-		seg.sourceFile += fileIndex
-		return seg
+		adjustedSeg := segDelta.adjustForSource()
+		resetSeg := seg.add(adjustedSeg)
+		return resetSeg
 	})
 	return offsetMappings
 }
 
 // PlayMappings loops through the mappings to calculate a "delta" that occurs
 // by applying "the rules".
-func (smap *SourceMap) PlayMappings() Segment {
+func (smap *SourceMap) PlayMappings() (lineCount int, segment Segment) {
 	var segDelta Segment
-	for generatedLine, line := range parseMappings(smap.Mappings) {
-		if line == nil {
-			continue
+	lines := parseMappings(smap.Mappings)
+	for _, line := range lines {
+		if line != nil {
+			segDelta.generatedColumn = 0
+			for _, seg := range line.segments {
+				segDelta = segDelta.add(*seg)
+				// fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
+				// segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
+			}
 		}
-		segDelta.generatedColumn = 0
-		for _, seg := range line.segments {
-			segDelta = segDelta.add(seg)
-			fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
-				segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
-		}
-		fmt.Println()
+		// fmt.Println()
 	}
-	return segDelta
+	return len(lines), segDelta
 }
 
 /*

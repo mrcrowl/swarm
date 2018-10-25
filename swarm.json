@@ -1,5 +1,12 @@
 {
+    "root": "C:\\WF\\Home\\topo",
+    "builds": {
+        "topo": {
+            "path": "builds/build.json",
+            "baseHref": "app"
+        }
+    },
     "server": {
-        "port": 8099
+        "port": 10000
     }
 }

@@ -48,7 +48,7 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 		if sourceMap := file.SourceMap(runtimeConfig, entryPointPath); sourceMap != nil {
 			lineCount := lineIndex - startingLineIndex
 			sourceMap.EnsureLoaded()
-			mapBuilder.AddSourceMap(lineIndex, lineCount, sourceMap.RelativePath(), sourceMap.Contents())
+			mapBuilder.AddSourceMap(lineCount, sourceMap.RelativePath(), sourceMap.Contents())
 		}
 	}
 	javascript = jsBuilder.String()
