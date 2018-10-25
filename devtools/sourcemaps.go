@@ -17,6 +17,13 @@ type SourceMap struct {
 	Mappings   string   `json:"mappings"`
 }
 
+type sourceMap struct {
+	startLineIndex int
+	lineCount      int
+	path           string
+	contents       string
+}
+
 type line struct {
 	segments []*Segment
 }
@@ -27,6 +34,19 @@ type Segment struct {
 	sourceFile      int
 	sourceLine      int
 	sourceColumn    int
+}
+
+func (seg *Segment) inverse() Segment {
+	return Segment{0, -seg.sourceFile, -seg.sourceLine, -seg.sourceColumn}
+}
+
+func (seg *Segment) add(other *Segment) Segment {
+	return Segment{
+		seg.generatedColumn + other.generatedColumn,
+		seg.sourceFile + other.sourceFile,
+		seg.sourceLine + other.sourceLine,
+		seg.sourceColumn + other.sourceColumn,
+	}
 }
 
 // ParseSourceMapJSON parses a source map from a json string
@@ -61,10 +81,7 @@ func (smap *SourceMap) PlayMappings() Segment {
 		}
 		segDelta.generatedColumn = 0
 		for _, seg := range line.segments {
-			segDelta.generatedColumn += seg.generatedColumn
-			segDelta.sourceFile += seg.sourceFile
-			segDelta.sourceLine += seg.sourceLine
-			segDelta.sourceColumn += seg.sourceColumn
+			segDelta = segDelta.add(seg)
 			fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
 				segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
 		}

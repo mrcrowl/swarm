@@ -27,7 +27,7 @@ func jsonEncodeString(s string) string {
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(false)
-	if err := enc.encode(s); err == nil {
+	if err := enc.Encode(s); err == nil {
 		s := buf.String()
 		n := len(s) - 1
 		if s[n] == '\n' {
