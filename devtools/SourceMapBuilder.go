@@ -21,7 +21,7 @@ func NewSourceMapBuilder(filename string, capacity int) *SourceMapBuilder {
 
 // AddSourceMap adds a source map to be included in the build
 func (smb *SourceMapBuilder) AddSourceMap(fileLineCount int, path string, sourceMapContents string) {
-	source := &sourceMap{ // TODO         ^^^^^^^^^^^^^^^^^^^^^^^ remove
+	source := &sourceMap{
 		fileLineCount,
 		path,
 		sourceMapContents,

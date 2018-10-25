@@ -35,18 +35,16 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 	entryPointFilename := path.Base(entryPointPath)
 	mapBuilder := devtools.NewSourceMapBuilder(entryPointFilename, fileset.Count())
 	files := fileset.Files()
-	lineIndex := 0
 	sort.Sort(ByFilepath(files))
 	for _, file := range files {
 		file.EnsureLoaded(runtimeConfig)
-		startingLineIndex := 0
+		lineCount := 0
 		for _, line := range file.BundleBody() {
 			jsBuilder.WriteString(line)
 			jsBuilder.WriteString("\n")
-			lineIndex++
+			lineCount++
 		}
 		if sourceMap := file.SourceMap(runtimeConfig, entryPointPath); sourceMap != nil {
-			lineCount := lineIndex - startingLineIndex
 			sourceMap.EnsureLoaded()
 			mapBuilder.AddSourceMap(lineCount, sourceMap.RelativePath(), sourceMap.Contents())
 		}
