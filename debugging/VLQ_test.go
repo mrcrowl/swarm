@@ -1,4 +1,4 @@
-package bundle
+package debugging
 
 import (
 	"testing"
