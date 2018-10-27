@@ -10,9 +10,26 @@
             "problemMatcher": [
                 "$tsc-watch"
             ],
+            "group": "build"
+        },
+        {
+            "label": "go test ./...",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "test",
+                "./..."
+            ],
             "group": {
-                "kind": "build",
+                "kind": "test",
                 "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true
             }
         }
     ]
