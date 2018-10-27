@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"swarm/config"
-	"swarm/io"
+	"swarm/util"
 )
 
 // File represents a single file containing source code
@@ -58,7 +58,7 @@ func (file *File) EnsureLoaded(runtimeConfig *config.RuntimeConfig) {
 
 // LoadContents loads a file's contents from disk and prepares them for bundling
 func (file *File) LoadContents(runtimeConfig *config.RuntimeConfig) {
-	contents, err := io.ReadContents(file.Filepath)
+	contents, err := util.ReadContents(file.Filepath)
 	if err != nil {
 		file.contents = &FailedFileContents{}
 		return

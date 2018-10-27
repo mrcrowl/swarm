@@ -2,6 +2,7 @@ package source
 
 import (
 	"strings"
+	"swarm/util"
 )
 
 // JSFileContents describes a systemjs file
@@ -26,7 +27,7 @@ func (jsfc *JSFileContents) SourceMappingURL() string {
 
 // ParseJSFileContents parses the contents of a JS file
 func ParseJSFileContents(name string, fileContents string) (*JSFileContents, error) {
-	lines := stringToLines(fileContents)
+	lines := util.StringToLines(fileContents)
 
 	numLines := len(lines)
 	var imports []string

@@ -2,7 +2,7 @@ package source
 
 import (
 	"log"
-	"swarm/io"
+	"swarm/util"
 )
 
 // Mapping is
@@ -37,7 +37,7 @@ func (mapping *Mapping) Contents() string {
 
 // LoadContents loads the files contents
 func (mapping *Mapping) LoadContents() {
-	contents, err := io.ReadContents(mapping.filepath)
+	contents, err := util.ReadContents(mapping.filepath)
 	if err != nil {
 		log.Printf("Failed to load source map: %s", mapping.filepath)
 		return

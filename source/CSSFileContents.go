@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"swarm/util"
 )
 
 // CSSFileContents describes a systemjs file
@@ -39,9 +40,9 @@ const cssTemplate = `System.register("%s", [], function (_export, _context) {
 // ParseCSSFileContents parses the lines of a CSS file into bundle-ready code
 func ParseCSSFileContents(name string, cssContents string, base string) (*CSSFileContents, error) {
 	cssContentsWithURLsRewritten := rewriteURLStatementsInCSS(cssContents, name)
-	encodedFile := jsonEncodeString(cssContentsWithURLsRewritten)
+	encodedFile := util.JSONEncodeString(cssContentsWithURLsRewritten)
 	body := fmt.Sprintf(cssTemplate, name, encodedFile)
-	lines := stringToLines(body)
+	lines := util.StringToLines(body)
 	return &CSSFileContents{lines}, nil
 }
 

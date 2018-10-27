@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"swarm/io"
 	"swarm/source"
+	"swarm/util"
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file
@@ -24,7 +24,7 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 
 	fileID := modifiedFileRelativePath
 	if path.Ext(modifiedFileRelativePath) == ".js" {
-		fileID = io.RemoveExtension(modifiedFileRelativePath)
+		fileID = util.RemoveExtension(modifiedFileRelativePath)
 	}
 
 	file := fileset.Get(fileID)
@@ -101,7 +101,7 @@ func followDependencyChain(workspace *source.Workspace, entryFileRelativePath st
 func readDependencies(file *source.File) []*source.Import {
 	var line string
 	var err error
-	if line, err = io.ReadFirstLine(file.Filepath); err != nil {
+	if line, err = util.ReadFirstLine(file.Filepath); err != nil {
 		return nil
 	}
 

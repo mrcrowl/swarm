@@ -1,4 +1,4 @@
-package io
+package util
 
 import (
 	"os"
@@ -16,16 +16,6 @@ func setup() {
 
 func teardown() {
 	os.RemoveAll(temppath)
-}
-
-func TestRemoveExtension(t *testing.T) {
-	sansExtension := RemoveExtension("/some/path/name.js")
-	assert.Equal(t, "/some/path/name", sansExtension)
-}
-
-func TestRemoveExtensionWhenNone(t *testing.T) {
-	sansExtension := RemoveExtension("/some/path/name")
-	assert.Equal(t, "/some/path/name", sansExtension)
 }
 
 const randomContents = `random\n\r\n\t\0whatever`
@@ -98,4 +88,31 @@ abcd`
 	assert.Nil(t, err)
 	assert.Equal(t, "abcd", firstLine)
 	teardown()
+}
+
+func TestCountLines(t *testing.T) {
+	source := "abcd\nefgh"
+	count, err := CountLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, count)
+}
+
+func TestCountLinesWindows(t *testing.T) {
+	source := "abcd\r\nefgh"
+	count, err := CountLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, count)
+}
+
+func TestCountLooooongLines(t *testing.T) {
+	source := testutil.ReadTextFile("c:\\wf\\lp\\web\\App\\node_modules\\systemjs\\dist", "system.js")
+	count, err := CountLines(source)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, count)
+}
+
+func TestStringToLines(t *testing.T) {
+	source := "abcd\nefgh"
+	lines := StringToLines(source)
+	assert.Equal(t, 2, len(lines))
 }

@@ -1,6 +1,9 @@
 package source
 
-import "fmt"
+import (
+	"fmt"
+	"swarm/util"
+)
 
 // StringFileContents describes a systemjs file
 type StringFileContents struct {
@@ -33,9 +36,9 @@ const template = `System.register("%s", [], function (_export, _context) {
 
 // ParseStringFileContents parses the lines of a SystemJS formatted file into the Elements
 func ParseStringFileContents(name string, fileContents string) (*StringFileContents, error) {
-	encodedFile := jsonEncodeString(fileContents)
+	encodedFile := util.JSONEncodeString(fileContents)
 
 	body := fmt.Sprintf(template, name, encodedFile)
-	lines := stringToLines(body)
+	lines := util.StringToLines(body)
 	return &StringFileContents{lines}, nil
 }
