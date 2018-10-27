@@ -33,6 +33,8 @@ func main() {
 		return
 	}
 
+	var server *web.Server
+
 	// monitor
 	ws := source.NewWorkspace(swarmConfig.RootPath)
 	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
@@ -41,12 +43,15 @@ func main() {
 		moduleDescrs.NormaliseModules(ws.RootPath()),
 		runtimeConfig,
 	)
-	go mon.NotifyOnChanges(moduleSet.NotifyChanges)
+	go mon.NotifyOnChanges(func(changes *monitor.EventChangeset) {
+		moduleSet.NotifyChanges(changes)
+		server.NotifyReload()
+	})
 	moduleSet.NotifyChanges(nil) // trigger first time build
 
 	// web server
 	handlers := moduleSet.GenerateHTTPHandlers()
-	server := web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
+	server = web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
 		Port:     swarmConfig.Server.Port,
 		Handlers: handlers,
 	})

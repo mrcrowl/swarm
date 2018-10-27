@@ -13,6 +13,7 @@ type Server struct {
 	rootPath string
 	port     uint16
 	handlers map[string]http.HandlerFunc
+	hub      *SocketHub
 }
 
 // ServerOptions specifies the parameters for the web server
@@ -21,15 +22,15 @@ type ServerOptions struct {
 	Handlers map[string]http.HandlerFunc
 }
 
-var stateInstance *Server
+var serverInstance *Server
 
 // DefaultPort will be automatically assigned, if no port is specified in the options
 const DefaultPort = uint16(8080)
 
 // CreateServer returns a started webserver
 func CreateServer(rootPath string, opts *ServerOptions) *Server {
-	if stateInstance != nil {
-		return stateInstance
+	if serverInstance != nil {
+		return serverInstance
 	}
 
 	port := DefaultPort
@@ -37,14 +38,17 @@ func CreateServer(rootPath string, opts *ServerOptions) *Server {
 		port = opts.Port
 	}
 
-	stateInstance = &Server{
+	hub := newSocketHub()
+
+	serverInstance = &Server{
 		srv:      nil,
 		rootPath: rootPath,
 		port:     port,
 		handlers: opts.Handlers,
+		hub:      hub,
 	}
 
-	return stateInstance
+	return serverInstance
 }
 
 // Start the web server
@@ -64,6 +68,19 @@ func (server *Server) Start() {
 	// })
 	// ENDHACK
 
+	// WEBSOCKETS
+	mux.HandleFunc("/__swarm__/SocketClient.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/javascript")
+		http.ServeFile(w, r, "./web/static/SocketClient.js")
+	})
+
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWebsocket(server.hub, w, r)
+	})
+
+	go server.hub.run()
+	// ENDWEBSOCKETS
+
 	server.srv = &http.Server{
 		Addr:    makeServerAddress(server.port),
 		Handler: mux,
@@ -72,6 +89,12 @@ func (server *Server) Start() {
 	if err := server.srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
+
+}
+
+// NotifyReload sends a message to the client page to reload
+func (server *Server) NotifyReload() {
+	server.hub.broadcast("reload", "")
 }
 
 // Port gets the port number for this server
@@ -89,6 +112,6 @@ func (server *Server) Stop() {
 	if cancel != nil {
 		server.srv.Shutdown(ctx)
 		server.srv = nil
-		stateInstance = nil
+		serverInstance = nil
 	}
 }
