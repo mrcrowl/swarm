@@ -52,8 +52,9 @@ func main() {
 	// web server
 	handlers := moduleSet.GenerateHTTPHandlers()
 	server = web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
-		Port:     swarmConfig.Server.Port,
-		Handlers: handlers,
+		Port:      swarmConfig.Server.Port,
+		Handlers:  handlers,
+		IndexPath: runtimeConfig.BaseHref + "/index.html",
 	})
 	go server.Start()
 	fmt.Printf("Listening on http://localhost:%d\n", server.Port())

@@ -3,23 +3,39 @@ package web
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"path"
+	"path/filepath"
 	"time"
 )
 
+const reloadJavascript = `
+		import {SocketClient} from "/__swarm__/SocketClient.js"
+		const sc = new SocketClient()
+		sc.on(e => e.type == "reload" && window.location.reload());
+		sc.connect();
+`
+const socketClientPath = "/__swarm__/SocketClient.js"
+const socketClientSource = "./web/static/SocketClient.js"
+
 // Server is the state of the web server
 type Server struct {
-	srv      *http.Server
-	rootPath string
-	port     uint16
-	handlers map[string]http.HandlerFunc
-	hub      *SocketHub
+	srv          *http.Server
+	rootFilepath string
+	indexPath    string
+	port         uint16
+	handlers     map[string]http.HandlerFunc
+	hub          *SocketHub
 }
 
 // ServerOptions specifies the parameters for the web server
 type ServerOptions struct {
-	Port     uint16
-	Handlers map[string]http.HandlerFunc
+	Port      uint16
+	Handlers  map[string]http.HandlerFunc
+	IndexPath string
 }
 
 var serverInstance *Server
@@ -28,7 +44,7 @@ var serverInstance *Server
 const DefaultPort = uint16(8080)
 
 // CreateServer returns a started webserver
-func CreateServer(rootPath string, opts *ServerOptions) *Server {
+func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
 	if serverInstance != nil {
 		return serverInstance
 	}
@@ -41,11 +57,12 @@ func CreateServer(rootPath string, opts *ServerOptions) *Server {
 	hub := newSocketHub()
 
 	serverInstance = &Server{
-		srv:      nil,
-		rootPath: rootPath,
-		port:     port,
-		handlers: opts.Handlers,
-		hub:      hub,
+		srv:          nil,
+		rootFilepath: rootFilepath,
+		indexPath:    opts.IndexPath,
+		port:         port,
+		handlers:     opts.Handlers,
+		hub:          hub,
 	}
 
 	return serverInstance
@@ -54,7 +71,8 @@ func CreateServer(rootPath string, opts *ServerOptions) *Server {
 // Start the web server
 func (server *Server) Start() {
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(server.rootPath)))
+	fileServer := http.FileServer(http.Dir(server.rootFilepath))
+	mux.Handle("/", fileServer)
 	for url, handler := range server.handlers {
 		mux.HandleFunc(url, handler)
 	}
@@ -68,18 +86,9 @@ func (server *Server) Start() {
 	// })
 	// ENDHACK
 
-	// WEBSOCKETS
-	mux.HandleFunc("/__swarm__/SocketClient.js", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/javascript")
-		http.ServeFile(w, r, "./web/static/SocketClient.js")
-	})
-
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWebsocket(server.hub, w, r)
-	})
-
+	server.attachIndexInjectionListener(mux, fileServer)
+	server.attachWebSocketListeners(mux)
 	go server.hub.run()
-	// ENDWEBSOCKETS
 
 	server.srv = &http.Server{
 		Addr:    makeServerAddress(server.port),
@@ -89,7 +98,48 @@ func (server *Server) Start() {
 	if err := server.srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
+}
 
+func (server *Server) attachWebSocketListeners(mux *http.ServeMux) {
+	mux.HandleFunc(socketClientPath, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/javascript")
+		http.ServeFile(w, r, socketClientSource)
+	})
+
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWebsocket(server.hub, w, r)
+	})
+}
+
+func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServer http.Handler) {
+	indexDirPath := path.Join("/", path.Dir(server.indexPath))
+	acceptedIndexPaths := []string{
+		"/" + server.indexPath,
+		indexDirPath,
+		indexDirPath + "/",
+	}
+
+	indexFilepath := filepath.Join(server.rootFilepath, server.indexPath)
+	indexHandler := func(w http.ResponseWriter, r *http.Request) {
+		for _, path := range acceptedIndexPaths {
+			if r.URL.Path == path {
+				bytes, err := ioutil.ReadFile(indexFilepath)
+				if err != nil {
+					log.Printf("ERROR: Failed to load index at: %s", indexFilepath)
+					return
+				}
+				indexString := string(bytes)
+				injectedIndexString := InjectInlineJavascript(indexString, reloadJavascript, true)
+				w.Header().Set("Content-Type", "text/html")
+				io.WriteString(w, injectedIndexString)
+				return
+			}
+		}
+
+		fileServer.ServeHTTP(w, r)
+	}
+
+	mux.HandleFunc(indexDirPath+"/", indexHandler)
 }
 
 // NotifyReload sends a message to the client page to reload
