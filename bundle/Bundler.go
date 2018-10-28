@@ -54,7 +54,7 @@ func (b *Bundler) Bundle(fileset *source.FileSet, runtimeConfig *config.RuntimeC
 			spacerLines := lineIndex - lastSourceMapLineIndex - lineCount
 			lastSourceMapLineIndex = lineIndex
 			sourceMap.EnsureLoaded()
-			mapBuilder.AddSourceMap(spacerLines, lineCount, sourceMap.RelativePath(), sourceMap.Contents())
+			mapBuilder.AddSourceMap(spacerLines, lineCount, sourceMap)
 		}
 	}
 	javascript = jsBuilder.String()

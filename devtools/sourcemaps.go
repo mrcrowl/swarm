@@ -1,94 +1,64 @@
 package devtools
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
+	"swarm/source"
 )
 
-// SourceMap represents the JSON structure of a source map in .map file
-type SourceMap struct {
-	Version    int      `json:"version"`
-	File       string   `json:"file"`
-	SourceRoot string   `json:"sourceRoot"`
-	Sources    []string `json:"sources"`
-	Names      []string `json:"names"`
-	Mappings   string   `json:"mappings"`
-}
-
-type sourceMap struct {
-	spacerLines   int
-	fileLineCount int
-	path          string
-	contents      string
-}
-
-type line struct {
-	segments []*Segment
-}
-
-// Segment is a mapping between a source file, line and column --> a generated column
-type Segment struct {
-	generatedColumn int
-	sourceFile      int
-	sourceLine      int
-	sourceColumn    int
-}
-
-func (seg *Segment) adjustForSource() Segment {
-	return Segment{0, seg.sourceFile, -seg.sourceLine, -seg.sourceColumn}
-}
-
-func (seg *Segment) add(other Segment) Segment {
-	return Segment{
-		seg.generatedColumn + other.generatedColumn,
-		seg.sourceFile + other.sourceFile,
-		seg.sourceLine + other.sourceLine,
-		seg.sourceColumn + other.sourceColumn,
+// PlayMappings loops through the mappings to calculate a "delta" that occurs
+// by applying "the rules".
+func (smap *sourceMap) PlayMappings() *source.MapPlayback {
+	playback := smap.mapping.Playback()
+	if playback == nil {
+		var segDelta source.Segment
+		lines := parseMappings(smap.mapping.Mappings())
+		for _, line := range lines {
+			if line != nil {
+				segDelta.GeneratedColumn = 0
+				for _, seg := range line.segments {
+					segDelta = segDelta.Add(*seg)
+					// fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
+					// segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
+				}
+			}
+			// fmt.Println()
+		}
+		playback = &source.MapPlayback{len(lines), segDelta}
+		smap.mapping.CachePlayback(playback)
 	}
-}
-
-// ParseSourceMapJSON parses a source map from a json string
-func ParseSourceMapJSON(sourceMapJSON string) (*SourceMap, error) {
-	var sm *SourceMap
-	err := json.Unmarshal([]byte(sourceMapJSON), &sm)
-	if err != nil {
-		return nil, errors.New("Invalid JSON in source map: " + err.Error())
-	}
-	return sm, nil
+	return playback
 }
 
 // OffsetMappings replaces the source file index of the first
 // VLQ in the Mappings field of this smap.  This is used for concatenating multiple source maps together.
 // See: https://sourcemaps.info/spec.html
 //      http://www.murzwin.com/base64vlq.html (WARNING: the ability to "play" source maps, near the bottom of this page is incorrect for this site!)
-func (smap *SourceMap) OffsetMappings(segDelta Segment) string {
-	offsetMappings := replaceFirstVLQ(smap.Mappings, func(seg Segment) Segment {
-		adjustedSeg := segDelta.adjustForSource()
-		resetSeg := seg.add(adjustedSeg)
+func (smap *sourceMap) OffsetMappings(segDelta source.Segment) string {
+	offsetMappings := replaceFirstVLQ(smap.mapping.Mappings(), func(seg source.Segment) source.Segment {
+		adjustedSeg := segDelta.AdjustForSource()
+		resetSeg := seg.Add(adjustedSeg)
 		return resetSeg
 	})
 	return offsetMappings
 }
 
-// PlayMappings loops through the mappings to calculate a "delta" that occurs
-// by applying "the rules".
-func (smap *SourceMap) PlayMappings() (lineCount int, segment Segment) {
-	var segDelta Segment
-	lines := parseMappings(smap.Mappings)
-	for _, line := range lines {
-		if line != nil {
-			segDelta.generatedColumn = 0
-			for _, seg := range line.segments {
-				segDelta = segDelta.add(*seg)
-				// fmt.Printf("[%d,%d](#%d)=>[%d,%d] |", segDelta.sourceLine, segDelta.sourceColumn,
-				// segDelta.sourceFile, generatedLine, segDelta.generatedColumn)
-			}
-		}
-		// fmt.Println()
-	}
-	return len(lines), segDelta
+type sourceMap struct {
+	spacerLines   int
+	fileLineCount int
+	mapping       *source.Mapping
+}
+
+// func (smap *sourceMap) contents() string {
+// 	return smap.mapping.Contents()
+// }
+
+func (smap *sourceMap) path() string {
+	return smap.mapping.RelativePath()
+}
+
+type line struct {
+	segments []*source.Segment
 }
 
 /*
@@ -134,7 +104,7 @@ func findFirstVLQ(maps string) (start int, end int) {
 	return
 }
 
-type vlqReplaceFn func(Segment) Segment
+type vlqReplaceFn func(source.Segment) source.Segment
 
 func replaceFirstVLQ(mappings string, replaceFn vlqReplaceFn) string {
 	start, end := findFirstVLQ(mappings)
@@ -165,7 +135,7 @@ func parseLineString(lineString string) *line {
 		return nil
 	}
 	segmentStrings := strings.Split(lineString, ",")
-	segments := make([]*Segment, len(segmentStrings))
+	segments := make([]*source.Segment, len(segmentStrings))
 	for i, segmentString := range segmentStrings {
 		seg := decodeSegment(segmentString)
 		segments[i] = &seg
@@ -203,14 +173,14 @@ func intToByte(i int) byte {
 }
 
 // decode decodes a base-64 VLQ string to a strongly-typed segment
-func decodeSegment(s string) Segment {
+func decodeSegment(s string) source.Segment {
 	values := decode(s)
 	if len(values) >= 4 {
-		return Segment{
-			generatedColumn: values[0],
-			sourceFile:      values[1],
-			sourceLine:      values[2],
-			sourceColumn:    values[3],
+		return source.Segment{
+			GeneratedColumn: values[0],
+			SourceFile:      values[1],
+			SourceLine:      values[2],
+			SourceColumn:    values[3],
 		}
 	}
 	panic(fmt.Sprintf("Encountered decode result with fewer than 4 values: %#v", values))
@@ -253,8 +223,8 @@ func decode(s string) []int {
 
 // encode encodes a list of numbers to a VLQ string
 
-func encodeSegment(seg Segment) string {
-	values := []int{seg.generatedColumn, seg.sourceFile, seg.sourceLine, seg.sourceColumn}
+func encodeSegment(seg source.Segment) string {
+	values := []int{seg.GeneratedColumn, seg.SourceFile, seg.SourceLine, seg.SourceColumn}
 	return encode(values)
 }
 

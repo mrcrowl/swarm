@@ -1,8 +1,8 @@
 package devtools
 
 import (
-	"log"
 	"strings"
+	"swarm/source"
 )
 
 // SourceMapBuilder is used for compiling source maps from existing source map files
@@ -20,12 +20,11 @@ func NewSourceMapBuilder(filename string, capacity int) *SourceMapBuilder {
 }
 
 // AddSourceMap adds a source map to be included in the build
-func (smb *SourceMapBuilder) AddSourceMap(spacerLines int, fileLineCount int, path string, sourceMapContents string) {
+func (smb *SourceMapBuilder) AddSourceMap(spacerLines int, fileLineCount int, mapping *source.Mapping) {
 	source := &sourceMap{
 		spacerLines,
 		fileLineCount,
-		path,
-		sourceMapContents,
+		mapping,
 	}
 	smb.sources = append(smb.sources, source)
 }
@@ -42,7 +41,7 @@ func (smb *SourceMapBuilder) String() string {
 		} else {
 			sb.WriteByte(',')
 		}
-		sb.WriteString("\"" + source.path + "\"")
+		sb.WriteString("\"" + source.path() + "\"")
 	}
 	sb.WriteString(`],"mappings":"`)
 	sb.WriteString(smb.GenerateMappings())
@@ -53,23 +52,17 @@ func (smb *SourceMapBuilder) String() string {
 // GenerateMappings outputs a string of the compiled sourcemap
 func (smb *SourceMapBuilder) GenerateMappings() string {
 	var sb strings.Builder
-	var lastMappingsDelta = Segment{0, 0, 0, 0}
-	var sourceMapLineCount int
+	var lastMappingsDelta = source.Segment{0, 0, 0, 0}
 	for _, source := range smb.sources {
 		sb.WriteString(strings.Repeat(";", source.spacerLines))
-
-		smap, err := ParseSourceMapJSON(source.contents)
-		if err != nil {
-			log.Printf("ERROR parsing source map: " + source.path)
-			continue
-		}
-
-		mappings := smap.OffsetMappings(lastMappingsDelta)
-		sourceMapLineCount, lastMappingsDelta = smap.PlayMappings()
-		lastMappingsDelta.sourceFile = 1
+		source.mapping.EnsureLoaded()
+		mappings := source.OffsetMappings(lastMappingsDelta)
+		playback := source.PlayMappings()
+		lastMappingsDelta = playback.SegmentDelta
+		lastMappingsDelta.SourceFile = 1
 
 		sb.WriteString(mappings)
-		additionalSeparators := 1 + (source.fileLineCount - sourceMapLineCount)
+		additionalSeparators := 1 + (source.fileLineCount - playback.LineCount)
 		sb.WriteString(strings.Repeat(";", additionalSeparators))
 	}
 	return sb.String()

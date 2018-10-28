@@ -3,7 +3,9 @@ package monitor
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"swarm/config"
 	"swarm/source"
 	"sync"
@@ -87,6 +89,7 @@ func (mon *Monitor) triggerCallbacks(changeset *EventChangeset, start time.Time,
 	}
 
 	mon.callbackMutex.Unlock()
+	pprof.StopCPUProfile()
 }
 
 // NotifyOnChanges notifies when events occur (after debouncing)
@@ -105,6 +108,8 @@ func (mon *Monitor) NotifyOnChanges() {
 			if mon.filter == nil || mon.filter(event, path) {
 				if changeset.empty() {
 					start = time.Now()
+					f, _ := os.Create("cpu.prof")
+					pprof.StartCPUProfile(f)
 					fmt.Print("Change detected...")
 				} else {
 					fmt.Print(".")

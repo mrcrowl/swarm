@@ -2,34 +2,11 @@ package devtools
 
 import (
 	"log"
+	"swarm/source"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestPlayMappings(t *testing.T) {
-	cases := map[string]struct {
-		mappings string
-		expected Segment
-	}{
-		// "zero":   {mappings: "AAAA", expected: segment{0, 0, 0, 0}},
-		// "1234":   {mappings: "ACEG", expected: segment{0, 1, 2, 3}},
-		// "1234;;": {mappings: "ACEG", expected: segment{0, 1, 2, 3}},
-		// ";":      {mappings: "AAAA", expected: segment{0, 0, 0, 0}},
-		// "MED":    {mappings: "AAAA;BBBB;CCCC,ACCC,ABBB,XYZA;ADDD", expected: segment{0, 0, 0, 0}},
-		// "LONG":          {expected: Segment{9, 0, 7, 3}, mappings: ";;;;;;;;;YAGA;gBAAA;gBAIA,CAAC;gBAHiB,QAAE,GAAhB;oBACI,OAAO,qCAAqC,CAAA;gBAChD,CAAC;gBACL,YAAC;YAAD,CAAC,AAJD,IAIC;;QAAC,CAAC"},
-		// "Config.js.map": {expected: Segment{9, 0, 173, 1}, mappings: "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"},
-		"First.js.map": {expected: Segment{9, 0, 7, 2}, mappings: ";;;;;;;;;;YAGA;gBAAA;gBAIA,CAAC;gBAHiB,QAAE,GAAhB;oBACI,OAAO,eAAa,eAAM,CAAC,EAAE,EAAI,CAAA;gBACrC,CAAC;gBACL,YAAC;YAAD,CAAC,AAJD,IAIC;;QAAA,CAAC"},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			smap := &SourceMap{Mappings: tc.mappings}
-			lineCount, actual := smap.PlayMappings()
-			assert.Equal(t, 20, lineCount)
-			assert.Equal(t, tc.expected, actual)
-		})
-	}
-}
 
 const firstJSON = `{
     "version": 3,
@@ -61,6 +38,31 @@ const thirdJSON = `{
 const mapping1 = `;;;;YAGA;gBAAA;gBAIA,CAAC`
 const mapping2 = `;;;;;;YACA;gBAAA;gBAKA,CAAC;`
 const combinedMappings = `;;;;YAGA;gBAAA;gBAIA,CAAC;;;;;;YCCA;gBAAA;gBAKA,CAAC;`
+
+func TestPlayMappings(t *testing.T) {
+	cases := map[string]struct {
+		mappings string
+		expected source.Segment
+	}{
+		"zero":          {mappings: "AAAA", expected: source.Segment{0, 0, 0, 0}},
+		"1234":          {mappings: "ACEG", expected: source.Segment{0, 1, 2, 3}},
+		"1234;;":        {mappings: "ACEG", expected: source.Segment{0, 1, 2, 3}},
+		";":             {mappings: "AAAA", expected: source.Segment{0, 0, 0, 0}},
+		"MED":           {mappings: "AAAA;BBBB;CCCC,ACCC,ABBB,XYZA;ADDD", expected: source.Segment{0, 0, 0, 0}},
+		"LONG":          {expected: source.Segment{9, 0, 7, 3}, mappings: ";;;;;;;;;YAGA;gBAAA;gBAIA,CAAC;gBAHiB,QAAE,GAAhB;oBACI,OAAO,qCAAqC,CAAA;gBAChD,CAAC;gBACL,YAAC;YAAD,CAAC,AAJD,IAIC;;QAAC,CAAC"},
+		"Config.js.map": {expected: source.Segment{9, 0, 173, 1}, mappings: "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"},
+		"First.js.map":  {expected: source.Segment{9, 0, 7, 2}, mappings: ";;;;;;;;;;YAGA;gBAAA;gBAIA,CAAC;gBAHiB,QAAE,GAAhB;oBACI,OAAO,eAAa,eAAM,CAAC,EAAE,EAAI,CAAA;gBACrC,CAAC;gBACL,YAAC;YAAD,CAAC,AAJD,IAIC;;QAAA,CAAC"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			config := &source.MapConfig{Mappings: tc.mappings}
+			mapping := source.NewMappingForTesting(config)
+			playback := mapping.Playback()
+			assert.Equal(t, 20, playback.LineCount)
+			assert.Equal(t, tc.expected, playback.SegmentDelta)
+		})
+	}
+}
 
 // func TestOffsetMappingsSourceFileIndex(t *testing.T) {
 // 	cases := map[string]struct {
@@ -157,20 +159,6 @@ func TestNextSepartorOrEOF(t *testing.T) {
 	}
 }
 
-func TestParseSourceMap(t *testing.T) {
-	value, err := ParseSourceMapJSON(firstJSON)
-	assert.Nil(t, err)
-	assert.Equal(t, 3, value.Version, "Version")
-	assert.NotEmpty(t, value.File, "File")
-	assert.Empty(t, value.SourceRoot, "SourceRoot")
-	assert.Len(t, value.Sources, 1, "Sources")
-	assert.Len(t, value.Names, 0, "Name")
-	assert.NotEmpty(t, value.Mappings, "Mappings")
-
-	parsed := parseMappings(value.Mappings)
-	assert.Len(t, parsed, 19)
-}
-
 func TestReplaceFirstVLQ(t *testing.T) {
 	cases := map[string]struct {
 		mappings      string
@@ -179,19 +167,19 @@ func TestReplaceFirstVLQ(t *testing.T) {
 	}{
 		"one": {
 			mappings: "YCCA",
-			replacementFn: func(seg Segment) Segment {
-				seg.generatedColumn++
+			replacementFn: func(seg source.Segment) source.Segment {
+				seg.GeneratedColumn++
 				return seg
 			},
 			expected: "aCCA",
 		},
 		"upndown": {
 			mappings: "AAAA",
-			replacementFn: func(seg Segment) Segment {
-				seg.generatedColumn++
-				seg.sourceFile--
-				seg.sourceLine++
-				seg.sourceColumn--
+			replacementFn: func(seg source.Segment) source.Segment {
+				seg.GeneratedColumn++
+				seg.SourceFile--
+				seg.SourceLine++
+				seg.SourceColumn--
 				return seg
 			},
 			expected: "CDCD",
@@ -223,13 +211,13 @@ func TestParseMapsString(t *testing.T) {
 		nil,
 		nil,
 		&line{
-			segments: []*Segment{
-				&Segment{0, 0, 0, 0},
+			segments: []*source.Segment{
+				&source.Segment{0, 0, 0, 0},
 			},
 		},
 		&line{
-			segments: []*Segment{
-				&Segment{5, 0, 0, 5},
+			segments: []*source.Segment{
+				&source.Segment{5, 0, 0, 5},
 			},
 		},
 		nil,
