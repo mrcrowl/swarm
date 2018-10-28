@@ -10,6 +10,14 @@ import (
 	"syscall"
 )
 
+// ExitIFError checks if err is non-nil and then shows the message and exits the program
+func ExitIfError(err error, message string, args ...interface{}) {
+	if err != nil {
+		log.Fatalf(message, args...)
+		os.Exit(1)
+	}
+}
+
 // WaitForCtrlC sleeps execution until the program receives a Ctrl+C
 func WaitForCtrlC() {
 	exitSignal := make(chan os.Signal)

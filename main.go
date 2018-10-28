@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"swarm/bundle"
 	"swarm/config"
 	"swarm/monitor"
@@ -14,18 +12,14 @@ import (
 )
 
 func main() {
-	// title
-	log.SetOutput(os.Stdout)
 	ui.PrintTitle()
 
 	// configuration
 	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
-	exitIfError(err, "Failed to load swarm.json file: %s", err)
-
-	// choose build
+	util.ExitIfError(err, "Failed to load swarm.json file: %s", err)
 	runtimeConfig := ui.ChooseBuild(swarmConfig.Builds)
 	moduleDescrs, err := config.LoadBuildDescriptionFile(runtimeConfig.BuildPath)
-	exitIfError(err, "Failed to load build description file: '%s'", runtimeConfig.BuildPath)
+	util.ExitIfError(err, "Failed to load build description file: '%s'", runtimeConfig.BuildPath)
 
 	// workspace
 	ws := source.NewWorkspace(swarmConfig.RootPath)
@@ -34,12 +28,8 @@ func main() {
 
 	// web server
 	handlers := moduleSet.GenerateHTTPHandlers()
-	server := web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
-		Port:            swarmConfig.Server.Port,
-		EnableHotReload: swarmConfig.Server.HotReload,
-		Handlers:        handlers,
-		BasePath:        runtimeConfig.BaseHref,
-	})
+	serverOptions := web.CreateServerOptions(swarmConfig.RootPath, swarmConfig.Server, handlers, runtimeConfig.BaseHref)
+	server := web.CreateServer(serverOptions)
 
 	// monitor
 	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
@@ -58,11 +48,5 @@ func main() {
 	// sleep
 	util.WaitForCtrlC()
 	server.Stop()
-}
-
-func exitIfError(err error, message string, args ...interface{}) {
-	if err != nil {
-		log.Fatalf(message, args...)
-		os.Exit(1)
-	}
+	mon.Stop()
 }

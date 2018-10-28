@@ -33,21 +33,13 @@ type Server struct {
 	hub          *SocketHub
 }
 
-// ServerOptions specifies the parameters for the web server
-type ServerOptions struct {
-	Port            uint16
-	EnableHotReload bool
-	Handlers        map[string]http.HandlerFunc
-	BasePath        string
-}
-
 var serverInstance *Server
 
 // DefaultPort will be automatically assigned, if no port is specified in the options
 const DefaultPort = uint16(8080)
 
 // CreateServer returns a started webserver
-func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
+func CreateServer(opts *ServerOptions) *Server {
 	if serverInstance != nil {
 		return serverInstance
 	}
@@ -69,7 +61,7 @@ func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
 
 	serverInstance = &Server{
 		srv:          nil,
-		rootFilepath: rootFilepath,
+		rootFilepath: opts.RootFilepath,
 		basePath:     opts.BasePath,
 		port:         port,
 		handlers:     opts.Handlers,
