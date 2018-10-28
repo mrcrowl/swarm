@@ -1,119 +1,65 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"sort"
-	"strconv"
 	"swarm/bundle"
 	"swarm/config"
 	"swarm/monitor"
 	"swarm/source"
+	"swarm/ui"
+	"swarm/util"
 	"swarm/web"
-	"syscall"
 )
 
 func main() {
-	fmt.Print("\nSwarm welcomes you.\n\n")
 	log.SetOutput(os.Stdout)
+
+	// title
+	ui.PrintTitle()
 
 	// configuration
 	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
-	if err != nil {
-		log.Fatalf("Failed to load swarm.json file: %s", err)
-		return
-	}
-	runtimeConfig := chooseBuild(swarmConfig.Builds)
+	exitIfError(err, "Failed to load swarm.json file: %s", err)
+
+	runtimeConfig := ui.ChooseBuild(swarmConfig.Builds)
 	moduleDescrs, err := config.LoadBuildDescriptionFile(runtimeConfig.BuildPath)
-	if err != nil {
-		log.Fatalf("Failed to load build description file: '%s'", runtimeConfig.BuildPath)
-		return
-	}
+	exitIfError(err, "Failed to load build description file: '%s'", runtimeConfig.BuildPath)
 
-	var server *web.Server
-
-	// monitor
+	// workspace
 	ws := source.NewWorkspace(swarmConfig.RootPath)
-	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
-	moduleSet := bundle.CreateModuleSet(
-		ws,
-		moduleDescrs.NormaliseModules(ws.RootPath()),
-		runtimeConfig,
-	)
-	go mon.NotifyOnChanges(func(changes *monitor.EventChangeset) {
-		moduleSet.NotifyChanges(changes)
-		server.NotifyReload()
-	})
-	moduleSet.NotifyChanges(nil) // trigger first time build
+	normalisedModules := moduleDescrs.NormaliseModules(ws.RootPath())
+	moduleSet := bundle.CreateModuleSet(ws, normalisedModules, runtimeConfig)
 
 	// web server
 	handlers := moduleSet.GenerateHTTPHandlers()
-	server = web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
-		Port:      swarmConfig.Server.Port,
-		Handlers:  handlers,
-		IndexPath: runtimeConfig.BaseHref + "/index.html",
+	server := web.CreateServer(swarmConfig.RootPath, &web.ServerOptions{
+		Port:            swarmConfig.Server.Port,
+		EnableHotReload: swarmConfig.Server.HotReload,
+		Handlers:        handlers,
+		IndexPath:       runtimeConfig.BaseHref + "/index.html",
 	})
+
+	// monitor
+	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
+	mon.RegisterCallback(moduleSet.NotifyChanges)
+	mon.RegisterCallback(server.NotifyReload)
+	fmt.Print("Performing initial build...")
+	mon.TriggerManually()
+
 	go server.Start()
+	go mon.NotifyOnChanges()
 	fmt.Printf("Listening on http://localhost:%d\n", server.Port())
 
 	// sleep
-	waitForExit(server)
-}
-
-func chooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
-	// build specified as first command line argument
-	if len(os.Args) > 1 {
-		buildName := os.Args[1]
-		if build, found := builds[buildName]; found {
-			return build
-		}
-	}
-
-	// single build?
-	if len(builds) == 1 {
-		for k := range builds {
-			return builds[k]
-		}
-	}
-
-	fmt.Println("Please choose a build:")
-	for {
-		buildNames := make([]string, len(builds))
-		i := 0
-		for name := range builds {
-			buildNames[i] = name
-			i++
-		}
-		sort.Strings(buildNames)
-
-		appmap := map[string]*config.RuntimeConfig{}
-		for i, name := range buildNames {
-			fmt.Printf("  %d) %s\n", (i + 1), name)
-			appmap[strconv.Itoa(i+1)] = builds[name]
-			appmap[name] = builds[name]
-			i++
-		}
-		fmt.Println("  -----------------------")
-		fmt.Print("  >")
-		reader := bufio.NewReader(os.Stdin)
-		lineBytes, _, err := reader.ReadLine()
-		if err != nil {
-			log.Fatal("Bad input")
-		}
-		if build, found := appmap[string(lineBytes)]; found {
-			return build
-		}
-	}
-}
-
-func waitForExit(server *web.Server) {
-
-	exitSignal := make(chan os.Signal)
-	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
-	<-exitSignal
-
+	util.WaitForExit()
 	server.Stop()
+}
+
+func exitIfError(err error, message string, args ...interface{}) {
+	if err != nil {
+		log.Fatalf(message, args...)
+		os.Exit(1)
+	}
 }

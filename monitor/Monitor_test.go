@@ -19,10 +19,11 @@ func TestMonitor(t *testing.T) {
 
 	notifyCount := 0
 	eventCount := 0
-	go mon.NotifyOnChanges(func(ec *EventChangeset) {
+	mon.RegisterCallback(func(ec *EventChangeset) {
 		notifyCount++
 		eventCount += ec.count()
 	})
+	go mon.NotifyOnChanges()
 
 	defer os.RemoveAll(dir)
 

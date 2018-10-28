@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"swarm/monitor"
 	"time"
 )
 
@@ -33,9 +34,10 @@ type Server struct {
 
 // ServerOptions specifies the parameters for the web server
 type ServerOptions struct {
-	Port      uint16
-	Handlers  map[string]http.HandlerFunc
-	IndexPath string
+	Port            uint16
+	EnableHotReload bool
+	Handlers        map[string]http.HandlerFunc
+	IndexPath       string
 }
 
 var serverInstance *Server
@@ -54,7 +56,15 @@ func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
 		port = opts.Port
 	}
 
-	hub := newSocketHub()
+	enableHotReload := true
+	if opts != nil {
+		enableHotReload = opts.EnableHotReload
+	}
+
+	hub := (*SocketHub)(nil)
+	if enableHotReload {
+		hub = newSocketHub()
+	}
 
 	serverInstance = &Server{
 		srv:          nil,
@@ -86,9 +96,12 @@ func (server *Server) Start() {
 	// })
 	// ENDHACK
 
-	server.attachIndexInjectionListener(mux, fileServer)
-	server.attachWebSocketListeners(mux)
-	go server.hub.run()
+	// HMR support
+	if server.hub != nil {
+		server.attachIndexInjectionListener(mux, fileServer)
+		server.attachWebSocketListeners(mux, server.hub)
+		go server.hub.run()
+	}
 
 	server.srv = &http.Server{
 		Addr:    makeServerAddress(server.port),
@@ -100,14 +113,14 @@ func (server *Server) Start() {
 	}
 }
 
-func (server *Server) attachWebSocketListeners(mux *http.ServeMux) {
+func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHub) {
 	mux.HandleFunc(socketClientPath, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/javascript")
 		http.ServeFile(w, r, socketClientSource)
 	})
 
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWebsocket(server.hub, w, r)
+		serveWebsocket(hub, w, r)
 	})
 }
 
@@ -143,8 +156,10 @@ func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServe
 }
 
 // NotifyReload sends a message to the client page to reload
-func (server *Server) NotifyReload() {
-	server.hub.broadcast("reload", "")
+func (server *Server) NotifyReload(changes *monitor.EventChangeset) {
+	if server.hub != nil {
+		server.hub.broadcast("reload", "")
+	}
 }
 
 // Port gets the port number for this server

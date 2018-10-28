@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"swarm/config"
 	"swarm/source"
+	"sync"
 	"time"
 
 	"github.com/rjeczalik/notify"
@@ -20,6 +21,8 @@ type Monitor struct {
 	channel          chan notify.EventInfo
 	filter           FilterFn
 	debounceDuration time.Duration
+	changeCallbacks  []func(changes *EventChangeset)
+	callbackMutex    *sync.Mutex
 }
 
 // NewMonitor creates a new Monitor
@@ -33,12 +36,15 @@ func NewMonitor(workspace *source.Workspace, config *config.MonitorConfig) *Moni
 
 	filter := createExtensionFilterFn(config.Extensions)
 	debounceDuration := time.Millisecond * time.Duration(config.DebounceMillis)
+	callbackMutex := &sync.Mutex{}
 
 	return &Monitor{
 		workspace,
 		channel,
 		filter,
 		debounceDuration,
+		nil,
+		callbackMutex,
 	}
 }
 
@@ -57,8 +63,34 @@ func createExtensionFilterFn(extensions []string) FilterFn {
 
 const notifyInterval = 10 * time.Minute
 
+// RegisterCallback adds a callback function which will be called when a change occurs
+func (mon *Monitor) RegisterCallback(callback func(changes *EventChangeset)) {
+	mon.changeCallbacks = append(mon.changeCallbacks, callback)
+}
+
+// TriggerManually is used to manually trigger the NotifyOnChanges event
+func (mon *Monitor) TriggerManually() {
+	mon.triggerCallbacks(nil, time.Now(), true)
+}
+
+func (mon *Monitor) triggerCallbacks(changeset *EventChangeset, start time.Time, silent bool) {
+	mon.callbackMutex.Lock()
+
+	fmt.Println("")
+	for _, callback := range mon.changeCallbacks {
+		callback(changeset)
+	}
+
+	if !silent {
+		elapsed := time.Since(start)
+		fmt.Printf("...done in %s\n", elapsed)
+	}
+
+	mon.callbackMutex.Unlock()
+}
+
 // NotifyOnChanges notifies when events occur (after debouncing)
-func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
+func (mon *Monitor) NotifyOnChanges() {
 	debounceTimer := time.NewTimer(notifyInterval)
 	changeset := NewEventChangeset()
 
@@ -84,11 +116,8 @@ func (mon *Monitor) NotifyOnChanges(callback func(changes *EventChangeset)) {
 		case <-debounceTimer.C:
 			// debounce and fire callback
 			if changeset.nonEmpty() {
-				fmt.Println("")
-				go callback(changeset)
+				go mon.triggerCallbacks(changeset, start, false)
 				changeset = NewEventChangeset()
-				elapsed := time.Since(start)
-				fmt.Printf("...done in %s\n", elapsed)
 			} else {
 				fmt.Println("")
 				fmt.Println("...no changes")

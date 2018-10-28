@@ -101,6 +101,4 @@ func CountLines(s string) (int, error) {
 			return count, err
 		}
 	}
-
-	return count, nil
 }
