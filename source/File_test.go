@@ -1,7 +1,6 @@
 package source
 
 import (
-	"os"
 	"swarm/config"
 	"swarm/testutil"
 	"testing"
@@ -16,7 +15,7 @@ func setup() {
 }
 
 func teardown() {
-	os.RemoveAll(temppath)
+	testutil.RemoveTempDir(temppath)
 }
 
 func getSampleFile(id string, ext string, contents string) *File {

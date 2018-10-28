@@ -117,7 +117,7 @@ func TestNormalisePaths(t *testing.T) {
 
 func TestTryLoadSwarmConfigFromCWD(t *testing.T) {
 	temppath := testutil.CreateTempDir()
-	defer os.RemoveAll(temppath)
+	defer testutil.RemoveTempDir(temppath)
 	testutil.WriteTextFile(temppath, swarmConfigDefaultFilename, swarmConfigJSONComplete)
 	os.Chdir(temppath)
 	_, err := TryLoadSwarmConfigFromCWD()

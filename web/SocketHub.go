@@ -7,17 +7,20 @@ import (
 
 // SocketHub maintains the set of active clients and broadcasts messages to them
 type SocketHub struct {
-	// Registered clients.
+	// registered clients.
 	clients map[*SocketClient]bool
 
-	// Inbound messages from the clients.
+	// used to broadcast to clients.
 	broadcastChannel chan []byte
 
-	// Register requests from the clients.
+	// register requests from the clients.
 	registerChannel chan *SocketClient
 
-	// Unregister requests from clients.
+	// unregister requests from clients.
 	unregisterChannel chan *SocketClient
+
+	// stopChannel closes the hub
+	stopChannel chan bool
 }
 
 func newSocketHub() *SocketHub {
@@ -25,6 +28,7 @@ func newSocketHub() *SocketHub {
 		broadcastChannel:  make(chan []byte),
 		registerChannel:   make(chan *SocketClient),
 		unregisterChannel: make(chan *SocketClient),
+		stopChannel:       make(chan bool),
 		clients:           make(map[*SocketClient]bool),
 	}
 }
@@ -68,6 +72,16 @@ func (hub *SocketHub) run() {
 					delete(hub.clients, client)
 				}
 			}
+
+		case <-hub.stopChannel:
+			for client := range hub.clients {
+				close(client.send)
+				delete(hub.clients, client)
+			}
 		}
 	}
+}
+
+func (hub *SocketHub) stop() {
+	hub.stopChannel <- true
 }

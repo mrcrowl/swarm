@@ -1,7 +1,6 @@
 package util
 
 import (
-	"os"
 	"swarm/testutil"
 	"testing"
 
@@ -15,7 +14,7 @@ func setup() {
 }
 
 func teardown() {
-	os.RemoveAll(temppath)
+	testutil.RemoveTempDir(temppath)
 }
 
 const randomContents = `random\n\r\n\t\0whatever`

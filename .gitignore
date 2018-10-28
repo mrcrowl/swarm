@@ -2,4 +2,4 @@
 debug
 */**/debug.test
 swarm.exe~
-web/static/*.js
+assets/static/*.js

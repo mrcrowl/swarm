@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"fmt"
-	"os"
 	"swarm/config"
 	"swarm/source"
 	"swarm/testutil"
@@ -25,7 +24,7 @@ func TestMonitor(t *testing.T) {
 	})
 	go mon.NotifyOnChanges()
 
-	defer os.RemoveAll(dir)
+	defer testutil.RemoveTempDir(dir)
 
 	for i := 0; i < 10; i++ {
 		var filename string

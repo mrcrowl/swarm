@@ -9,19 +9,18 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"swarm/assets"
 	"swarm/monitor"
+	"swarm/util"
 	"time"
 )
 
 const indexhtml = "index.html"
-const reloadJavascript = `
-		import {SocketClient} from "/__swarm__/SocketClient.js"
-		const sc = new SocketClient()
-		sc.on(e => e.type == "reload" && window.location.reload());
-		sc.connect();
-`
-const socketClientPath = "/__swarm__/SocketClient.js"
-const socketClientSource = "./web/static/SocketClient.js"
+const swarmVirtualPath = "/__swarm__"
+const assetsPhysicalPath = "/assets/static"
+const hotReloadFilename = "HotReload.js"
+const socketClientFilename = "SocketClient.js"
+const webSocketServerPath = swarmVirtualPath + "/ws"
 
 // Server is the state of the web server
 type Server struct {
@@ -33,17 +32,11 @@ type Server struct {
 	hub          *SocketHub
 }
 
-var serverInstance *Server
-
 // DefaultPort will be automatically assigned, if no port is specified in the options
 const DefaultPort = uint16(8080)
 
 // CreateServer returns a started webserver
 func CreateServer(opts *ServerOptions) *Server {
-	if serverInstance != nil {
-		return serverInstance
-	}
-
 	port := DefaultPort
 	if opts != nil {
 		port = opts.Port
@@ -59,7 +52,7 @@ func CreateServer(opts *ServerOptions) *Server {
 		hub = newSocketHub()
 	}
 
-	serverInstance = &Server{
+	server := &Server{
 		srv:          nil,
 		rootFilepath: opts.RootFilepath,
 		basePath:     opts.BasePath,
@@ -68,7 +61,7 @@ func CreateServer(opts *ServerOptions) *Server {
 		hub:          hub,
 	}
 
-	return serverInstance
+	return server
 }
 
 // Start the web server
@@ -107,13 +100,28 @@ func (server *Server) attachStaticFileServer(mux *http.ServeMux) http.Handler {
 	return fileServer
 }
 
-func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHub) {
-	mux.HandleFunc(socketClientPath, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/javascript")
-		http.ServeFile(w, r, socketClientSource)
-	})
+func loadAssetString(assetFilename string) string {
+	source, _ := assets.FS.String(assetsPhysicalPath + "/" + assetFilename)
+	return source
+}
 
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+func swarmify(assetPath string) string {
+	return path.Join(swarmVirtualPath, assetPath)
+}
+
+func createStringHandleFunc(filename string) func(w http.ResponseWriter, r *http.Request) {
+	contents := loadAssetString(filename)
+	mimeType := util.MimeTypeFromFilename(filename)
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", mimeType)
+		io.WriteString(w, contents)
+	}
+}
+
+func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHub) {
+	mux.HandleFunc(swarmify(socketClientFilename), createStringHandleFunc(socketClientFilename))
+	mux.HandleFunc(swarmify(hotReloadFilename), createStringHandleFunc(hotReloadFilename))
+	mux.HandleFunc(webSocketServerPath, func(w http.ResponseWriter, r *http.Request) {
 		serveWebsocket(hub, w, r)
 	})
 }
@@ -135,10 +143,10 @@ func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServe
 					log.Printf("ERROR: Failed to load index at: %s", indexFilepath)
 					return
 				}
-				indexString := string(bytes)
-				injectedIndexString := InjectInlineJavascript(indexString, reloadJavascript, true)
-				w.Header().Set("Content-Type", "text/html")
-				io.WriteString(w, injectedIndexString)
+				indexHTML := string(bytes)
+				injectedIndexHTML := InjectSrcJavascript(indexHTML, swarmify(hotReloadFilename), true)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				io.WriteString(w, injectedIndexHTML)
 				return
 			}
 		}
@@ -176,6 +184,8 @@ func (server *Server) Stop() {
 	if cancel != nil {
 		server.srv.Shutdown(ctx)
 		server.srv = nil
-		serverInstance = nil
+	}
+	if server.hub != nil {
+		server.hub.stop()
 	}
 }

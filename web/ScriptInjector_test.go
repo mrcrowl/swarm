@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInjectSrcJavascriptModule(t *testing.T) {
+	actual := InjectSrcJavascript(`<html><head><title /></head><body><div></div></body></html>`, "/abcd/test.js", true)
+	expected := `<html><head><title /></head><body><div></div><script type="module" src="/abcd/test.js"></script></body></html>`
+	assert.Equal(t, expected, actual)
+}
+
 func TestInjectInlineJavascriptModule(t *testing.T) {
 	actual := InjectInlineJavascript(`<html><head><title /></head><body><div></div></body></html>`, "alert('Hello, world.');", true)
 	expected := `<html><head><title /></head><body><div></div><script type="module">alert('Hello, world.');</script></body></html>`

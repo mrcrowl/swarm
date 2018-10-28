@@ -1,7 +1,6 @@
 package dep
 
 import (
-	"os"
 	"swarm/source"
 	"swarm/testutil"
 	"testing"
@@ -22,7 +21,7 @@ System.register(["./QuestionStateContext", "./SupportFunctions", "./VariableDepe
 
 func TestReadDependencies(t *testing.T) {
 	temppath := testutil.CreateTempDir()
-	defer os.RemoveAll(temppath)
+	defer testutil.RemoveTempDir(temppath)
 	testutil.WriteTextFile(temppath, "VariableEvaluator.js", jsFileWithCommentsBeforeSystemRegister)
 
 	ws := source.NewWorkspace(temppath)
