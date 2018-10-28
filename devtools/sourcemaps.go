@@ -24,7 +24,7 @@ func (smap *sourceMap) PlayMappings() *source.MapPlayback {
 			}
 			// fmt.Println()
 		}
-		playback = &source.MapPlayback{len(lines), segDelta}
+		playback = &source.MapPlayback{LineCount: len(lines), SegmentDelta: segDelta}
 		smap.mapping.CachePlayback(playback)
 	}
 	return playback

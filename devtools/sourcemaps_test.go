@@ -214,12 +214,12 @@ func TestParseMapsString(t *testing.T) {
 		nil,
 		&line{
 			segments: []*source.Segment{
-				&source.Segment{0, 0, 0, 0},
+				&source.Segment{GeneratedColumn: 0, SourceFile: 0, SourceLine: 0, SourceColumn: 0},
 			},
 		},
 		&line{
 			segments: []*source.Segment{
-				&source.Segment{5, 0, 0, 5},
+				&source.Segment{GeneratedColumn: 5, SourceFile: 0, SourceLine: 0, SourceColumn: 5},
 			},
 		},
 		nil,

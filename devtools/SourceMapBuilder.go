@@ -52,7 +52,7 @@ func (smb *SourceMapBuilder) String() string {
 // GenerateMappings outputs a string of the compiled sourcemap
 func (smb *SourceMapBuilder) GenerateMappings() string {
 	var sb strings.Builder
-	var lastMappingsDelta = source.Segment{0, 0, 0, 0}
+	var lastMappingsDelta = source.Segment{GeneratedColumn: 0, SourceFile: 0, SourceLine: 0, SourceColumn: 0}
 	for _, source := range smb.sources {
 		sb.WriteString(strings.Repeat(";", source.spacerLines))
 		source.mapping.EnsureLoaded()
