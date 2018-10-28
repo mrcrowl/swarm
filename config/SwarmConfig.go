@@ -100,7 +100,7 @@ func DefaultSwarmConfig(cwd string) *SwarmConfig {
 		RootPath: getDefaultRootPath(),
 		Monitor:  NewMonitorConfig(defaultMonitorExtensions, 150),
 		Builds:   defaultBuilds,
-		Server:   NewServerConfig(defaultServerPort, true),
+		Server:   NewServerConfig(defaultServerPort, true, true),
 	}
 	config.expandAndNormalisePaths(cwd)
 	return config

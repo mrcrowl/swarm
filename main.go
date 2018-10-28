@@ -38,7 +38,7 @@ func main() {
 		Port:            swarmConfig.Server.Port,
 		EnableHotReload: swarmConfig.Server.HotReload,
 		Handlers:        handlers,
-		IndexPath:       runtimeConfig.BaseHref + "/index.html",
+		BasePath:        runtimeConfig.BaseHref,
 	})
 
 	// monitor
@@ -50,7 +50,10 @@ func main() {
 
 	go server.Start()
 	go mon.NotifyOnChanges()
-	fmt.Printf("Listening on http://localhost:%d\n", server.Port())
+	fmt.Printf("Listening on %s", server.URL())
+	if swarmConfig.Server.Open {
+		util.OpenBrowser(server.URL())
+	}
 
 	// sleep
 	util.WaitForExit()

@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+const indexhtml = "index.html"
 const reloadJavascript = `
 		import {SocketClient} from "/__swarm__/SocketClient.js"
 		const sc = new SocketClient()
@@ -26,7 +27,7 @@ const socketClientSource = "./web/static/SocketClient.js"
 type Server struct {
 	srv          *http.Server
 	rootFilepath string
-	indexPath    string
+	basePath     string
 	port         uint16
 	handlers     map[string]http.HandlerFunc
 	hub          *SocketHub
@@ -37,7 +38,7 @@ type ServerOptions struct {
 	Port            uint16
 	EnableHotReload bool
 	Handlers        map[string]http.HandlerFunc
-	IndexPath       string
+	BasePath        string
 }
 
 var serverInstance *Server
@@ -69,7 +70,7 @@ func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
 	serverInstance = &Server{
 		srv:          nil,
 		rootFilepath: rootFilepath,
-		indexPath:    opts.IndexPath,
+		basePath:     opts.BasePath,
 		port:         port,
 		handlers:     opts.Handlers,
 		hub:          hub,
@@ -81,23 +82,12 @@ func CreateServer(rootFilepath string, opts *ServerOptions) *Server {
 // Start the web server
 func (server *Server) Start() {
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir(server.rootFilepath))
-	mux.Handle("/", fileServer)
-	for url, handler := range server.handlers {
-		mux.HandleFunc(url, handler)
-	}
 
-	// HACK:
-	// mux.HandleFunc("/app/src/ep/app.js.map", func(w http.ResponseWriter, r *http.Request) {
-	// 	http.ServeFile(w, r, "C:\\WF\\Home\\topo\\app\\src\\ep\\app.build.js.map")
-	// })
-	// mux.HandleFunc("/app/src/ep/ui/base/BaseController.ts", func(w http.ResponseWriter, r *http.Request) {
-	// 	http.ServeFile(w, r, "C:\\WF\\LP\\Web\\App\\app\\src\\ep\\ui\\base\\BaseController.ts")
-	// })
-	// ENDHACK
+	fileServer := server.attachStaticFileServer(mux)
+	server.attachCustomHandlers(mux)
 
-	// HMR support
 	if server.hub != nil {
+		// add HMR support
 		server.attachIndexInjectionListener(mux, fileServer)
 		server.attachWebSocketListeners(mux, server.hub)
 		go server.hub.run()
@@ -113,6 +103,18 @@ func (server *Server) Start() {
 	}
 }
 
+func (server *Server) attachCustomHandlers(mux *http.ServeMux) {
+	for url, handler := range server.handlers {
+		mux.HandleFunc(url, handler)
+	}
+}
+
+func (server *Server) attachStaticFileServer(mux *http.ServeMux) http.Handler {
+	fileServer := http.FileServer(http.Dir(server.rootFilepath))
+	mux.Handle("/", fileServer)
+	return fileServer
+}
+
 func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHub) {
 	mux.HandleFunc(socketClientPath, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/javascript")
@@ -125,14 +127,14 @@ func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHu
 }
 
 func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServer http.Handler) {
-	indexDirPath := path.Join("/", path.Dir(server.indexPath))
+	rootedBasePath := path.Join("/", server.basePath)
 	acceptedIndexPaths := []string{
-		"/" + server.indexPath,
-		indexDirPath,
-		indexDirPath + "/",
+		rootedBasePath,
+		rootedBasePath + "/",
+		rootedBasePath + "/" + indexhtml,
 	}
 
-	indexFilepath := filepath.Join(server.rootFilepath, server.indexPath)
+	indexFilepath := filepath.Join(server.rootFilepath, server.basePath, indexhtml)
 	indexHandler := func(w http.ResponseWriter, r *http.Request) {
 		for _, path := range acceptedIndexPaths {
 			if r.URL.Path == path {
@@ -152,7 +154,7 @@ func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServe
 		fileServer.ServeHTTP(w, r)
 	}
 
-	mux.HandleFunc(indexDirPath+"/", indexHandler)
+	mux.HandleFunc(rootedBasePath+"/", indexHandler)
 }
 
 // NotifyReload sends a message to the client page to reload
@@ -160,6 +162,11 @@ func (server *Server) NotifyReload(changes *monitor.EventChangeset) {
 	if server.hub != nil {
 		server.hub.broadcast("reload", "")
 	}
+}
+
+// URL gets the localhost URL for this server
+func (server *Server) URL() string {
+	return fmt.Sprintf("http://localhost:%d/%s", server.Port(), server.basePath)
 }
 
 // Port gets the port number for this server

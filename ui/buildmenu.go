@@ -46,7 +46,7 @@ func ChooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig 
 // chooseBuildFromMenu presents a menu to select a build
 func chooseBuildFromMenu(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
 	buildNames := enumerateBuildNames(builds)
-	fmt.Printf("Choose your build: (hint: default argument is the build, e.g. %s %s)\n", executableName(), buildNames[0])
+	fmt.Printf("Choose your build: (hint: you can choose build as first arg to swarm, e.g. %s %s)\n", executableName(), buildNames[0])
 
 	for {
 

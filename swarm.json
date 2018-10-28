@@ -1,5 +1,7 @@
 {
     "server": {
-        "port": 8096
+        "port": 8096,
+        "open": true,
+        "hotReload": true
     }
 }
