@@ -13,6 +13,23 @@
             "group": "build"
         },
         {
+            "label": "go build",
+            "type": "shell",
+            "command": "go",
+            "args": [ "build" ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true
+            }
+        },
+        {
             "label": "go test ./...",
             "type": "shell",
             "command": "go",
