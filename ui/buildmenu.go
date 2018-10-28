@@ -8,10 +8,11 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"swarm/config"
 )
 
-const windowsExecName = "swarm.exe"
+const windowsExecName = "swarm"
 const linuxExecName = "./swarm"
 
 // ChooseBuild chooses the build to use from a list of builds, invoking a user prompt if necessary
@@ -46,18 +47,27 @@ func ChooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig 
 // chooseBuildFromMenu presents a menu to select a build
 func chooseBuildFromMenu(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
 	buildNames := enumerateBuildNames(builds)
-	fmt.Printf("Choose your build: (hint: you can choose build as first arg to swarm, e.g. %s %s)\n", executableName(), buildNames[0])
+	fmt.Println("-----------------------------------------------")
+	fmt.Println("     Hint: use build arg to skip this menu")
+	fmt.Printf("              e.g. C:\\>%s %s\n", executableName(), buildNames[0])
+	fmt.Println("-----------------------------------------------")
+	fmt.Println("Choose your build:")
 
 	for {
 
 		appmap := map[string]*config.RuntimeConfig{}
+		longestBuildName := 3
 		for i, name := range buildNames {
 			fmt.Printf("  %d) %s\n", (i + 1), name)
 			appmap[strconv.Itoa(i+1)] = builds[name]
 			appmap[name] = builds[name]
+			if len(name) > longestBuildName {
+				longestBuildName = len(name)
+			}
 			i++
 		}
-		fmt.Println("  -----------------------")
+		fmt.Print("  ")
+		fmt.Println(strings.Repeat("-", longestBuildName+3))
 		fmt.Print("  >")
 		reader := bufio.NewReader(os.Stdin)
 		lineBytes, _, err := reader.ReadLine()
