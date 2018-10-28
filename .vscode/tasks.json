@@ -5,7 +5,7 @@
     "tasks": [
         {
             "type": "typescript",
-            "tsconfig": "web\\static\\tsconfig.json",
+            "tsconfig": "assets\\static\\tsconfig.json",
             "option": "watch",
             "problemMatcher": [
                 "$tsc-watch"

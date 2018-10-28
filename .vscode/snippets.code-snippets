@@ -20,8 +20,8 @@
 		"prefix": "test",
 		"body": [
 			"func Test${1:Name}(t *testing.T) {",
-			"\tvalue := $0",
-			"\tassert.Equal(t, , value)",
+			"\tactual := $0",
+			"\tassert.Equal(t, ${2:expected}, actual)",
 			"}"
 		]
 	},
