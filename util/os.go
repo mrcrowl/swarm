@@ -10,8 +10,8 @@ import (
 	"syscall"
 )
 
-// WaitForExit sleeps execution until the program receives a Ctrl+C
-func WaitForExit() {
+// WaitForCtrlC sleeps execution until the program receives a Ctrl+C
+func WaitForCtrlC() {
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal

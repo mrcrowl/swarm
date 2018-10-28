@@ -14,15 +14,15 @@ import (
 )
 
 func main() {
-	log.SetOutput(os.Stdout)
-
 	// title
+	log.SetOutput(os.Stdout)
 	ui.PrintTitle()
 
 	// configuration
 	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
 	exitIfError(err, "Failed to load swarm.json file: %s", err)
 
+	// choose build
 	runtimeConfig := ui.ChooseBuild(swarmConfig.Builds)
 	moduleDescrs, err := config.LoadBuildDescriptionFile(runtimeConfig.BuildPath)
 	exitIfError(err, "Failed to load build description file: '%s'", runtimeConfig.BuildPath)
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// sleep
-	util.WaitForExit()
+	util.WaitForCtrlC()
 	server.Stop()
 }
 
