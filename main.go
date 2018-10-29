@@ -40,7 +40,7 @@ func main() {
 
 	go server.Start()
 	go mon.NotifyOnChanges()
-	fmt.Printf("Listening on %s", server.URL())
+	fmt.Printf("Listening on %s\n", server.URL())
 	if swarmConfig.Server.Open {
 		util.OpenBrowser(server.URL())
 	}

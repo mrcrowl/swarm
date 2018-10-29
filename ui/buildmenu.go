@@ -14,6 +14,8 @@ import (
 
 const windowsExecName = "swarm"
 const linuxExecName = "./swarm"
+const windowsPrompt = "C:\\>"
+const linuxPrompt = "$ "
 
 // ChooseBuild chooses the build to use from a list of builds, invoking a user prompt if necessary
 func ChooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
@@ -47,9 +49,8 @@ func ChooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig 
 // chooseBuildFromMenu presents a menu to select a build
 func chooseBuildFromMenu(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
 	buildNames := enumerateBuildNames(builds)
-	fmt.Println("-----------------------------------------------")
 	fmt.Println("     Hint: use build arg to skip this menu")
-	fmt.Printf("              e.g. C:\\>%s %s\n", executableName(), buildNames[0])
+	fmt.Printf("              e.g. %s%s %s\n", executablePrompt(), executableName(), buildNames[0])
 	fmt.Println("-----------------------------------------------")
 	fmt.Println("Choose your build:")
 
@@ -90,6 +91,14 @@ func enumerateBuildNames(builds map[string]*config.RuntimeConfig) []string {
 	}
 	sort.Strings(buildNames)
 	return buildNames
+}
+
+// executablePrompt returns the common prompt pattern seen on the platform
+func executablePrompt() string {
+	if runtime.GOOS == "windows" {
+		return windowsPrompt
+	}
+	return linuxPrompt
 }
 
 // executableName returns the appropriate executable name for the platform
