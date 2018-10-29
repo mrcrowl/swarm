@@ -4,20 +4,9 @@ export interface Listener<T> {
 
 export class EventEmitter<T> {
 	private listeners: Listener<T>[] = [];
-	private listenersOncer: Listener<T>[] = [];
 
-	on = (listener: Listener<T>) => {
-		this.listeners.push(listener);
-	};
-
-	emit = (event: T) => {
-		/** Update any general listeners */
-		this.listeners.forEach(listener => listener(event));
-
-		/** Clear the `once` queue */
-		this.listenersOncer.forEach(listener => listener(event));
-		this.listenersOncer = [];
-	};
+	on = (listener: Listener<T>) => this.listeners.push(listener);
+	emit = (event: T) => this.listeners.forEach(listener => listener(event));
 }
 
 export interface SocketPayload {
