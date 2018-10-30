@@ -30,11 +30,12 @@ func main() {
 	handlers := moduleSet.GenerateHTTPHandlers()
 	serverOptions := web.CreateServerOptions(swarmConfig.RootPath, swarmConfig.Server, handlers, runtimeConfig.BaseHref)
 	server := web.CreateServer(serverOptions)
+	hotReloader := web.NewHotReloader(server, ws, moduleSet)
 
 	// monitor
 	mon := monitor.NewMonitor(ws, swarmConfig.Monitor)
 	mon.RegisterCallback(moduleSet.NotifyChanges)
-	mon.RegisterCallback(server.NotifyReload)
+	mon.RegisterCallback(hotReloader.NotifyReload)
 	fmt.Print("Performing initial build...")
 	mon.TriggerManually()
 

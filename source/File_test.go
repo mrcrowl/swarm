@@ -67,7 +67,7 @@ func TestEnsureLoadedCSS(t *testing.T) {
 	f.EnsureLoaded(config.NewRuntimeConfig("", "app"))
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &CSSFileContents{}, f.contents)
-	assert.Len(t, f.BundleBody(), 12)
+	assert.Len(t, f.BundleBody(), 13)
 	teardown()
 }
 

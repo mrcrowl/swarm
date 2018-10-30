@@ -46,9 +46,9 @@ const systemJSExpected = `/**
 		   appdir: "./src/",
 		   appController: "./src/ep/AppController.js",
 		   upgradeAdapter: "./src/ep/upgradeAdapterApp.js",
-		   common: "../common",
-		   services: "../services",
-		   utils: "../utils",
+		   common: "../common", /* <-- REWRITTEN BY SWARM */
+		   services: "../services", /* <-- REWRITTEN BY SWARM */
+		   utils: "../utils", /* <-- REWRITTEN BY SWARM */
 		   "bootstrap-theme.min.css": "libs:twitter-bootstrap/3.3.6h/css/bootstrap-theme.min.css",
 		   "custom-bootstrap.css": "libs:twitter-bootstrap/3.3.6h/custom/custom-bootstrap.css",
 		   "bowser.min.js": "node_modules:bowser/bowser.min.js"

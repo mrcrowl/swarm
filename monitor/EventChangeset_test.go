@@ -64,3 +64,24 @@ func TestNonEmpty(t *testing.T) {
 	sut.Add(notify.Create, "abcd/efgh")
 	assert.True(t, sut.nonEmpty())
 }
+
+func TestHasCSSOnlyChanges(t *testing.T) {
+	sut := NewEventChangeset()
+	sut.Add(notify.Write, "abcd/efgh.css")
+	assert.ElementsMatch(t, []string{".css"}, sut.AffectedFileExts())
+	assert.True(t, sut.HasSingleExt(".css"))
+}
+
+func TestNotHasHTMLOnlyChanges(t *testing.T) {
+	sut := NewEventChangeset()
+	sut.Add(notify.Write, "abcd/efgh.css")
+	assert.False(t, sut.HasSingleExt(".html"))
+}
+
+func TestHasHTMLAndCSSChanges(t *testing.T) {
+	sut := NewEventChangeset()
+	sut.Add(notify.Write, "abcd/efgh.css")
+	sut.Add(notify.Write, "blah.html")
+	assert.ElementsMatch(t, []string{".html", ".css"}, sut.AffectedFileExts())
+	assert.False(t, sut.HasSingleExt(".css"))
+}

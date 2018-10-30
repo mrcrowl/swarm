@@ -112,3 +112,8 @@ func (file *File) SourceMap(runtimeConfig *config.RuntimeConfig, entryPointRootR
 func (file *File) BundleBody() []string {
 	return file.contents.BundleLines()
 }
+
+// RawContents provides access to the underlying file contents object
+func (file *File) RawContents() FileContents {
+	return file.contents
+}

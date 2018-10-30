@@ -62,6 +62,16 @@ func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 	set.mutex.Unlock()
 }
 
+// FindFileByPath finds and returns a file by path name
+func (set *ModuleSet) FindFileByPath(path string) *source.File {
+	for _, mod := range set.modules {
+		if file := mod.GetFileByPath(path); file != nil {
+			return file
+		}
+	}
+	return nil
+}
+
 func (set *ModuleSet) getModule(name string) *Module {
 	for _, mod := range set.modules {
 		if mod.description.Name == name {

@@ -36,6 +36,11 @@ func NewModule(ws *source.Workspace, descr *config.NormalisedModuleDescription, 
 	}
 }
 
+// GetFileByPath returns the file with the specified path, if it exists
+func (mod *Module) GetFileByPath(path string) *source.File {
+	return mod.fileset.Get(path)
+}
+
 // Name gets the name of the module
 func (mod *Module) Name() string {
 	return mod.description.Name

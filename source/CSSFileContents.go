@@ -9,14 +9,24 @@ import (
 	"swarm/util"
 )
 
+const (
+	CSSPrefix = "__swarm__css__"
+)
+
 // CSSFileContents describes a systemjs file
 type CSSFileContents struct {
-	lines []string
+	lines         []string
+	rawCSSContent string
 }
 
 // BundleLines returns a list of lines ready to include in a SystemJSBundle
 func (cssfc *CSSFileContents) BundleLines() []string {
 	return cssfc.lines
+}
+
+// RawCSSContent returns the CSS as it was originally found in the source file
+func (cssfc *CSSFileContents) RawCSSContent() string {
+	return cssfc.rawCSSContent
 }
 
 // SourceMappingURL returns ""
@@ -30,9 +40,10 @@ const cssTemplate = `System.register("%s", [], function (_export, _context) {
 	return {
 		setters: [],
 		execute: function () {
-		    function injectCSS(c){if (typeof document == 'undefined') return; var d=document,a='appendChild',i='styleSheet',s=d.createElement('style');s.type='text/css';d.getElementsByTagName('head')[0][a](s);s[a](d.createTextNode(c));}
+			function injectCSS(e,t){if("undefined"!=typeof document)if(n=document.querySelector("#" + CSS.escape(t)))n.childNodes[0].textContent=e;else{var n,d=document,c="appendChild";(n=d.createElement("style")).id=t,n.type="text/css",d.getElementsByTagName("head")[0][c](n),n[c](d.createTextNode(e))}}
 			var css = %s;
-			injectCSS(css);
+			var id = "%s";
+			injectCSS(css, id);
 		}
 	}
 });`
@@ -41,9 +52,9 @@ const cssTemplate = `System.register("%s", [], function (_export, _context) {
 func ParseCSSFileContents(name string, cssContents string, base string) (*CSSFileContents, error) {
 	cssContentsWithURLsRewritten := rewriteURLStatementsInCSS(cssContents, name)
 	encodedFile := util.JSONEncodeString(cssContentsWithURLsRewritten)
-	body := fmt.Sprintf(cssTemplate, name, encodedFile)
+	body := fmt.Sprintf(cssTemplate, name, encodedFile, CSSPrefix+name)
 	lines := util.StringToLines(body)
-	return &CSSFileContents{lines}, nil
+	return &CSSFileContents{lines, cssContents}, nil
 }
 
 var rewriteURLPattern = regexp.MustCompile(`url\(['"][^'"]+['"]\)`)

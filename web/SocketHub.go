@@ -37,15 +37,15 @@ const (
 	messageInterval = 2 * time.Second
 )
 
-// SocketMessage encapsulates a message to the client
-type SocketMessage struct {
+// SocketPayload encapsulates a message to the client
+type SocketPayload struct {
 	Type string `json:"type"`
 	Data string `json:"data"`
 }
 
 func (hub *SocketHub) broadcast(typ string, data string) {
 	go func() {
-		message := &SocketMessage{Type: typ, Data: data}
+		message := &SocketPayload{Type: typ, Data: data}
 		jsonBytes, _ := json.Marshal(message)
 		hub.broadcastChannel <- jsonBytes
 	}()

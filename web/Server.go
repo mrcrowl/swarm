@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"swarm/assets"
-	"swarm/monitor"
+	"swarm/source"
 	"swarm/util"
 	"time"
 )
@@ -185,16 +186,35 @@ func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServe
 	mux.HandleFunc(rootedBasePath+"/", indexHandler)
 }
 
-// NotifyReload sends a message to the client page to reload
-func (server *Server) NotifyReload(changes *monitor.EventChangeset) {
-	if server.hub != nil {
-		server.hub.broadcast("reload", "")
+// TriggerFullReload causes a full HTML reload to be fired
+func (server *Server) TriggerFullReload() {
+	server.hub.broadcast("reload", "")
+}
+
+// ReloadCSSPayloadData encapsulates the data to reload a specific style sheet
+type ReloadCSSPayloadData struct {
+	ID  string `json:"id"`
+	CSS string `json:"css"`
+}
+
+// TriggerCSSReload causes a CSS-only reload to be fired
+func (server *Server) TriggerCSSReload(path string, css string) {
+	cssReloadData := &ReloadCSSPayloadData{
+		ID:  source.CSSPrefix + path,
+		CSS: css,
 	}
+	jsonBytes, _ := json.Marshal(cssReloadData)
+	server.hub.broadcast("reload-css", string(jsonBytes))
 }
 
 // URL gets the localhost URL for this server
 func (server *Server) URL() string {
 	return fmt.Sprintf("http://localhost:%d/%s", server.Port(), server.basePath)
+}
+
+// IsHotReloadEnabled gets whether hot reload is enabled
+func (server *Server) IsHotReloadEnabled() bool {
+	return server.hub != nil
 }
 
 // Port gets the port number for this server

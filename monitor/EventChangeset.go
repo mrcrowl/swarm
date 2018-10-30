@@ -1,6 +1,8 @@
 package monitor
 
 import (
+	"path"
+
 	"github.com/rjeczalik/notify"
 )
 
@@ -37,6 +39,26 @@ func (ec *EventChangeset) Add(event notify.Event, path string) bool {
 	}
 
 	return false
+}
+
+// AffectedFileExts returns a unique list of file extensions that are included in this changeset, e.g. [".css", ".html"]
+func (ec *EventChangeset) AffectedFileExts() []string {
+	extensionsIndex := make(map[string]bool)
+	extList := make([]string, 0, 8)
+	for _, change := range ec.changes {
+		ext := path.Ext(change.path)
+		if _, seen := extensionsIndex[ext]; !seen {
+			extensionsIndex[ext] = true
+			extList = append(extList, ext)
+		}
+	}
+	return extList
+}
+
+// HasSingleExt returns true if AffectedFileExts contains one entry with the supplied extension
+func (ec *EventChangeset) HasSingleExt(ext string) bool {
+	affectedExts := ec.AffectedFileExts()
+	return len(affectedExts) == 1 && affectedExts[0] == ext
 }
 
 func (ec *EventChangeset) count() int {
