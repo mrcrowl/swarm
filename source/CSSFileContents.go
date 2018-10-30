@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// CSSPrefix is prepended to the id attribute of each <style/> tag to ensure they are uniquely identifable
 	CSSPrefix = "__swarm__css__"
 )
 
