@@ -4,6 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "TypeScript build static assets",
             "type": "typescript",
             "tsconfig": "assets/static/tsconfig.json",
             "option": "watch",
@@ -30,7 +31,7 @@
                 "panel": "shared",
                 "showReuseMessage": true
             },
-            "problemMatcher": [
+            "problemMatcher": [ 
                 "$go"
             ]
         },

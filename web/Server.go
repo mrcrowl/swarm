@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"regexp"
 	"swarm/assets"
 	"swarm/monitor"
 	"swarm/util"
@@ -16,6 +17,7 @@ import (
 )
 
 const indexhtml = "index.html"
+const systemJSConfigJS = "systemjs.config.js"
 const swarmVirtualPath = "/__swarm__"
 const assetsPhysicalPath = "/assets/static"
 const hotReloadFilename = "HotReload.js"
@@ -69,6 +71,7 @@ func (server *Server) Start() {
 	mux := http.NewServeMux()
 
 	fileServer := server.attachStaticFileServer(mux)
+	server.attachSystemJSRewriteHandler(mux)
 	server.attachCustomHandlers(mux)
 
 	if server.hub != nil {
@@ -98,6 +101,31 @@ func (server *Server) attachStaticFileServer(mux *http.ServeMux) http.Handler {
 	fileServer := http.FileServer(http.Dir(server.rootFilepath))
 	mux.Handle("/", fileServer)
 	return fileServer
+}
+
+func (server *Server) attachSystemJSRewriteHandler(mux *http.ServeMux) {
+	systemJSFilepath := filepath.Join(server.rootFilepath, server.basePath, systemJSConfigJS)
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		bytes, err := ioutil.ReadFile(systemJSFilepath)
+		if err != nil {
+			log.Printf("ERROR: Failed to load SystemJS config at: %s", systemJSFilepath)
+			return
+		}
+		configJS := string(bytes)
+		rewrittenConfigJS := rewriteSystemJSConfigPaths(configJS)
+		mimeType := util.MimeTypeFromFilename(systemJSFilepath)
+		w.Header().Set("Content-Type", mimeType)
+		io.WriteString(w, rewrittenConfigJS)
+		return
+	}
+	systemJSPath := path.Join("/", server.basePath, systemJSConfigJS)
+	mux.HandleFunc(systemJSPath, handler)
+}
+
+var rewriteSystemJSPattern = regexp.MustCompile(`"\.\/(common|services|utils)",`)
+
+func rewriteSystemJSConfigPaths(systemJSConfig string) string {
+	return rewriteSystemJSPattern.ReplaceAllString(systemJSConfig, `"../$1", /* <-- REWRITTEN BY SWARM */`)
 }
 
 func loadAssetString(assetFilename string) string {

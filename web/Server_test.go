@@ -11,6 +11,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const systemJSExample = `/**
+* System configuration for Angular samples
+* Adjust as necessary for your application needs.
+*/
+(function (global) {
+   System.config({
+	   map: {
+		   // our app is within the app folder
+		   root: "../../",
+		   appdir: "./src/",
+		   appController: "./src/ep/AppController.js",
+		   upgradeAdapter: "./src/ep/upgradeAdapterApp.js",
+		   common: "./common",
+		   services: "./services",
+		   utils: "./utils",
+		   "bootstrap-theme.min.css": "libs:twitter-bootstrap/3.3.6h/css/bootstrap-theme.min.css",
+		   "custom-bootstrap.css": "libs:twitter-bootstrap/3.3.6h/custom/custom-bootstrap.css",
+		   "bowser.min.js": "node_modules:bowser/bowser.min.js"
+		   // .....
+		}
+    });
+})(this);`
+
+const systemJSExpected = `/**
+* System configuration for Angular samples
+* Adjust as necessary for your application needs.
+*/
+(function (global) {
+   System.config({
+	   map: {
+		   // our app is within the app folder
+		   root: "../../",
+		   appdir: "./src/",
+		   appController: "./src/ep/AppController.js",
+		   upgradeAdapter: "./src/ep/upgradeAdapterApp.js",
+		   common: "../common",
+		   services: "../services",
+		   utils: "../utils",
+		   "bootstrap-theme.min.css": "libs:twitter-bootstrap/3.3.6h/css/bootstrap-theme.min.css",
+		   "custom-bootstrap.css": "libs:twitter-bootstrap/3.3.6h/custom/custom-bootstrap.css",
+		   "bowser.min.js": "node_modules:bowser/bowser.min.js"
+		   // .....
+		}
+    });
+})(this);`
+
 func createWebServer(rootpath string) (*Server, *http.ServeMux) {
 	fmt.Printf("Creating web server with root: %s\n", rootpath)
 	config := config.NewServerConfig(9001, false, true)
@@ -35,6 +81,11 @@ func TestPort(t *testing.T) {
 func TestMakeServerAddress(t *testing.T) {
 	actual := makeServerAddress(uint16(9001))
 	assert.Equal(t, ":9001", actual)
+}
+
+func TestSystemJSConfigRewritePaths(t *testing.T) {
+	actual := rewriteSystemJSConfigPaths(systemJSExample)
+	assert.Equal(t, systemJSExpected, actual)
 }
 
 func TestStaticFileServer(t *testing.T) {
