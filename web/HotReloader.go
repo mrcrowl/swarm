@@ -24,33 +24,35 @@ func NewHotReloader(server *Server, workspace *source.Workspace, moduleSet *bund
 
 // NotifyReload sends a message to the client page to reload
 func (hot *HotReloader) NotifyReload(changes *monitor.EventChangeset) {
-	if changes != nil && !changes.DidBundle() {
-		return
-	}
-
 	if !hot.server.IsHotReloadEnabled() {
 		return
 	}
 
-	if changes != nil && changes.HasSingleExt(".css") {
-		// css-only reload
-		seenFiles := make(map[string]bool)
-		for _, change := range changes.Changes() {
-			// dedupe: only reload each file once
-			if _, seen := seenFiles[change.AbsoluteFilepath()]; seen {
-				continue
-			}
-
-			seenFiles[change.AbsoluteFilepath()] = true
-			if relativePath, ok := hot.workspace.ToRelativePath(change.AbsoluteFilepath()); ok {
-				if file := hot.moduleSet.FindFileByPath(relativePath); file != nil {
-					cssContent := file.RawContents().(*source.CSSFileContents).RawCSSContent()
-					hot.server.TriggerCSSReload(relativePath, cssContent)
-				}
-			}
+	if changes != nil {
+		if changes.SkipHotReload() {
+			return
 		}
 
-		return
+		if changes.HasSingleExt(".css") {
+			// css-only reload
+			seenFiles := make(map[string]bool)
+			for _, change := range changes.Changes() {
+				// dedupe: only reload each file once
+				if _, seen := seenFiles[change.AbsoluteFilepath()]; seen {
+					continue
+				}
+
+				seenFiles[change.AbsoluteFilepath()] = true
+				if relativePath, ok := hot.workspace.ToRelativePath(change.AbsoluteFilepath()); ok {
+					if file := hot.moduleSet.FindFileByPath(relativePath); file != nil {
+						cssContent := file.RawContents().(*source.CSSFileContents).RawCSSContent()
+						hot.server.TriggerCSSReload(relativePath, cssContent)
+					}
+				}
+			}
+
+			return
+		}
 	}
 
 	hot.server.TriggerFullReload()

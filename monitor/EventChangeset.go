@@ -13,6 +13,8 @@ type EventChangeset struct {
 	didBundle   bool
 }
 
+const hotReloadChangeThreshold = 50
+
 // NewEventChangeset creates a new EventChangeset
 func NewEventChangeset() *EventChangeset {
 	return &EventChangeset{
@@ -67,9 +69,17 @@ func (ec *EventChangeset) FlagDidBundle() {
 	ec.didBundle = true
 }
 
-// DidBundle gets whether the changeset caused a bundle
-func (ec *EventChangeset) DidBundle() bool {
-	return ec.didBundle
+// SkipHotReload gets a flag about whether this changeset should cause a HR
+func (ec *EventChangeset) SkipHotReload() bool {
+	if !ec.didBundle {
+		return true
+	}
+
+	if ec.count() > hotReloadChangeThreshold {
+		return true
+	}
+
+	return false
 }
 
 func (ec *EventChangeset) count() int {
