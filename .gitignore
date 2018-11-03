@@ -6,3 +6,4 @@ assets/static/*.js
 swarm
 .DS_Store
 *.zip
+.previous-version
