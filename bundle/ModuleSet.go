@@ -57,7 +57,9 @@ func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 	for _, mod := range set.modules {
 		if mod.dirty() {
 			mod.generateBundle()
-			changes.FlagDidBundle()
+			if changes != nil {
+				changes.FlagDidBundle()
+			}
 		}
 	}
 	set.mutex.Unlock()
