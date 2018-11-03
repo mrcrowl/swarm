@@ -5,3 +5,4 @@ swarm.exe~
 assets/static/*.js
 swarm
 .DS_Store
+*.zip
