@@ -44,7 +44,8 @@ func AutoUpdate(localVersionString string) (bool, *semver.Version) {
 		downloadBytes, err := downloadBinary(newVersion)
 		if err == nil {
 			reader := bytes.NewReader(downloadBytes)
-			err = updater.Apply(reader, update.Options{OldSavePath: ".previous-version"})
+
+			err = updater.Apply(reader, update.Options{OldSavePath: oldSavePath()})
 			if err == nil {
 				return true, newVersion
 			}
@@ -57,6 +58,14 @@ func AutoUpdate(localVersionString string) (bool, *semver.Version) {
 
 	// no update required
 	return false, nil
+}
+
+func oldSavePath() string {
+	oldSavePath := ".oldswarm"
+	if runtime.GOOS == "windows" {
+		oldSavePath += ".exe"
+	}
+	return oldSavePath
 }
 
 // downloadBinary triggers an update to the specified version
