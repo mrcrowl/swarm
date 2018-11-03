@@ -43,7 +43,7 @@ func AutoUpdate(localVersionString string) (bool, *semver.Version) {
 		downloadBytes, err := downloadBinary(newVersion)
 		if err == nil {
 			reader := bytes.NewReader(downloadBytes)
-			err = updater.Apply(reader, update.Options{})
+			err = updater.Apply(reader, update.Options{OldSavePath: ".previous-version"})
 			if err == nil {
 				return true, newVersion
 			}

@@ -2,17 +2,26 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"swarm/bundle"
 	"swarm/config"
 	"swarm/monitor"
 	"swarm/source"
 	"swarm/ui"
 	"swarm/util"
+	"swarm/version"
 	"swarm/web"
 )
 
+const localver = "0.9.0"
+
 func main() {
-	ui.PrintTitle()
+	ui.PrintTitle(localver)
+
+	if didUpdate, newver := version.AutoUpdate(localver); didUpdate {
+		fmt.Printf("Updated to %v, please restart!", newver)
+		os.Exit(0)
+	}
 
 	// configuration
 	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
