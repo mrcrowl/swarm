@@ -118,6 +118,17 @@ System.register(["tslib"], function (exports_1, context_1) {
 	assert.True(t, elems.isSystemJS)
 }
 
+func TestParseRegisterAllCommented(t *testing.T) {
+	source := `// import { ServerMethods } from "./ServerMethods";
+// const x = ServerMethods
+//# sourceMappingURL=blah.js.map`
+	elems, err := ParseJSFileContents("blah", source)
+	assert.Nil(t, err)
+	assert.False(t, elems.isSystemJS)
+	assert.Empty(t, elems.preamble)
+	assert.Len(t, elems.body, 3)
+}
+
 func TestSkipPreamblePrefix(t *testing.T) {
 	source := `// comment 1
 // comment 2`

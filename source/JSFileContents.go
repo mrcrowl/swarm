@@ -39,19 +39,27 @@ func ParseJSFileContents(name string, fileContents string) (*JSFileContents, err
 	var numPreambleLines int
 	if numLines > 0 {
 		preamble, numPreambleLines = skipPreamble(lines)
-		registerLine := lines[numPreambleLines]
-		imports, foundRegister = ParseRegisterDependencies(registerLine, false)
+		if numPreambleLines == numLines {
+			body = preamble
+			preamble = []string{}
+			sourceMappingURL = ""
+		} else {
+			registerLine := lines[numPreambleLines]
+			imports, foundRegister = ParseRegisterDependencies(registerLine, false)
 
-		sourceMapLine := lines[numLines-1]
-		sourceMappingURL, foundSourceMap = parseSourceMappingURL(sourceMapLine)
+			sourceMapLine := lines[numLines-1]
+			sourceMappingURL, foundSourceMap = parseSourceMappingURL(sourceMapLine)
 
-		body = chooseBodyLines(lines, numPreambleLines, foundSourceMap)
+			body = chooseBodyLines(lines, numPreambleLines, foundSourceMap)
+		}
 	}
 
 	bodyCopy := []string(nil)
 	bodyCopy = append(bodyCopy, preamble...)
 	bodyCopy = append(bodyCopy, body...)
-	bodyCopy[len(preamble)] = getRegisterLineForBundle(name, imports)
+	if foundRegister {
+		bodyCopy[len(preamble)] = getRegisterLineForBundle(name, imports)
+	}
 
 	return &JSFileContents{
 		preamble:         preamble,
