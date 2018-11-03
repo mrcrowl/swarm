@@ -56,9 +56,15 @@ func ParseJSFileContents(name string, fileContents string) (*JSFileContents, err
 
 	bodyCopy := []string(nil)
 	bodyCopy = append(bodyCopy, preamble...)
-	bodyCopy = append(bodyCopy, body...)
+
 	if foundRegister {
+		bodyCopy = append(bodyCopy, body...)
 		bodyCopy[len(preamble)] = getRegisterLineForBundle(name, imports)
+	} else {
+		bodyCopy = append(bodyCopy, getRegisterLineForBundle(name, nil))
+		bodyCopy = append(bodyCopy, body...)
+		bodyCopy = append(bodyCopy, "});")
+		numLines += 2
 	}
 
 	return &JSFileContents{

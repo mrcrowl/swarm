@@ -22,12 +22,20 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 	//
 	// 1. invalidate it's content
 
+	didRemoveJSSuffix := false
 	fileID := modifiedFileRelativePath
 	if path.Ext(modifiedFileRelativePath) == ".js" {
 		fileID = util.RemoveExtension(modifiedFileRelativePath)
+		didRemoveJSSuffix = true
 	}
 
 	file := fileset.Get(fileID)
+	if file == nil && didRemoveJSSuffix {
+		// maybe we're importing a .js file into a .ts file
+		fileID = fileID + ".js"
+		file = fileset.Get(fileID)
+	}
+
 	if file != nil {
 		file.UnloadContents()
 		fileset.MarkDirty()

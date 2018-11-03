@@ -44,7 +44,7 @@ func TestEnsureLoadedPlainJS(t *testing.T) {
 	f.EnsureLoaded(nil)
 	assert.True(t, f.Loaded())
 	assert.IsType(t, &JSFileContents{}, f.contents)
-	assert.Len(t, f.BundleBody(), 1)
+	assert.Len(t, f.BundleBody(), 3)
 	teardown()
 }
 

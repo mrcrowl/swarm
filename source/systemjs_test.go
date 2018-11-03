@@ -50,9 +50,9 @@ func TestParseWrongFileType(t *testing.T) {
 	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, []string{}, elems.imports)
-	assert.Equal(t, 3, len(elems.body))
+	assert.Equal(t, 5, len(elems.body))
 	assert.Equal(t, "", elems.sourceMappingURL)
-	assert.Equal(t, 3, elems.lineCount)
+	assert.Equal(t, 5, elems.lineCount)
 	assert.False(t, elems.isSystemJS)
 }
 
@@ -65,9 +65,9 @@ func TestParseSourceMapOnly(t *testing.T) {
 	elems, err := ParseJSFileContents("abcd", source)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, []string{}, elems.imports)
-	assert.Equal(t, 3, len(elems.body))
+	assert.Equal(t, 5, len(elems.body))
 	assert.Equal(t, "blah.xml", elems.sourceMappingURL)
-	assert.Equal(t, 4, elems.lineCount)
+	assert.Equal(t, 6, elems.lineCount)
 	assert.False(t, elems.isSystemJS)
 }
 
@@ -126,7 +126,7 @@ func TestParseRegisterAllCommented(t *testing.T) {
 	assert.Nil(t, err)
 	assert.False(t, elems.isSystemJS)
 	assert.Empty(t, elems.preamble)
-	assert.Len(t, elems.body, 3)
+	assert.Len(t, elems.body, 5)
 }
 
 func TestSkipPreamblePrefix(t *testing.T) {
