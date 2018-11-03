@@ -13,13 +13,13 @@ import (
 	"swarm/web"
 )
 
-const localver = "0.9.0"
+const localver = "1.0.1"
 
 func main() {
 	ui.PrintTitle(localver)
 
-	if didUpdate, newver := version.AutoUpdate(localver); didUpdate {
-		fmt.Printf("Updated to %v, please restart!", newver)
+	if didUpdate, _ := version.AutoUpdate(localver); didUpdate {
+		fmt.Print("updated. Please restart!")
 		os.Exit(0)
 	}
 

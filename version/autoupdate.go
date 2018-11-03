@@ -40,6 +40,7 @@ func IsUpdateRequired(localVersionString string) (bool, *semver.Version) {
 func AutoUpdate(localVersionString string) (bool, *semver.Version) {
 	updateReq, newVersion := IsUpdateRequired(localVersionString)
 	if updateReq {
+		fmt.Printf("Downloading version %v...", newVersion)
 		downloadBytes, err := downloadBinary(newVersion)
 		if err == nil {
 			reader := bytes.NewReader(downloadBytes)
