@@ -94,7 +94,7 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 	}
 }
 
-func (mod *Module) generateArtefacts() {
+func (mod *Module) generateBundle() {
 	mod.bundledJavascript, mod.bundledSourcemap = mod.bundler.Bundle(mod.fileset, mod.runtimeConfig, mod.PrimaryEntryPoint())
 	mod.fileset.ClearDirty()
 	fmt.Printf("   Bundled: /%s.js (%d files)\n", mod.PrimaryEntryPoint(), mod.fileset.Count())

@@ -10,6 +10,7 @@ import (
 type EventChangeset struct {
 	changeIndex map[string]bool
 	changes     []*Event
+	didBundle   bool
 }
 
 // NewEventChangeset creates a new EventChangeset
@@ -59,6 +60,16 @@ func (ec *EventChangeset) AffectedFileExts() []string {
 func (ec *EventChangeset) HasSingleExt(ext string) bool {
 	affectedExts := ec.AffectedFileExts()
 	return len(affectedExts) == 1 && affectedExts[0] == ext
+}
+
+// FlagDidBundle marks the changeset as having caused a bundle
+func (ec *EventChangeset) FlagDidBundle() {
+	ec.didBundle = true
+}
+
+// DidBundle gets whether the changeset caused a bundle
+func (ec *EventChangeset) DidBundle() bool {
+	return ec.didBundle
 }
 
 func (ec *EventChangeset) count() int {

@@ -56,7 +56,8 @@ func (set *ModuleSet) NotifyChanges(changes *monitor.EventChangeset) {
 	// TODO: could this be parallelised?
 	for _, mod := range set.modules {
 		if mod.dirty() {
-			mod.generateArtefacts()
+			mod.generateBundle()
+			changes.FlagDidBundle()
 		}
 	}
 	set.mutex.Unlock()

@@ -24,6 +24,10 @@ func NewHotReloader(server *Server, workspace *source.Workspace, moduleSet *bund
 
 // NotifyReload sends a message to the client page to reload
 func (hot *HotReloader) NotifyReload(changes *monitor.EventChangeset) {
+	if !changes.DidBundle() {
+		return
+	}
+
 	if !hot.server.IsHotReloadEnabled() {
 		return
 	}
