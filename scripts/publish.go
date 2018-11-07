@@ -97,12 +97,19 @@ func gzipFile(localFilename string) []byte {
 
 // AddFileToS3 will upload a single file to S3, it will require a pre-built aws session
 // and will set file info like content type and encryption on the uploaded file.
-func writeFileToS3(gzippedBytes []byte, remoteFilename string, gzipped bool) error {
+func writeFileToS3(gzippedBytes []byte, remoteFilename string, gzipped bool) {
 	// Create a single AWS session (we can re use this if we're uploading many files)
+	creds := credentials.NewEnvCredentials()
+	if runtime.GOOS == "windows" {
+		creds = credentials.NewSharedCredentials(credentialsFilename, credentialsProfile)
+	}
 	s, err := session.NewSession(&aws.Config{
 		Region:      aws.String(s3Region),
-		Credentials: credentials.NewSharedCredentials(credentialsFilename, credentialsProfile),
+		Credentials: creds,
 	})
+	if err != nil {
+		panic(err)
+	}
 	s3Client := s3.New(s)
 
 	// Config settings: this is where you choose the bucket, filename, content-type etc.
@@ -139,5 +146,7 @@ func writeFileToS3(gzippedBytes []byte, remoteFilename string, gzipped bool) err
 		putInput.ContentEncoding = aws.String("gzip")
 	}
 	_, err = s3Client.PutObject(putInput)
-	return err
+	if err != nil {
+		panic(err)
+	}
 }
