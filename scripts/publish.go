@@ -91,6 +91,7 @@ func gzipFile(localFilename string) []byte {
 	var buffer bytes.Buffer
 	gzwriter, _ := gzip.NewWriterLevel(&buffer, gzip.BestCompression)
 	gzwriter.Write(rawBytes)
+	gzwriter.Close()
 	gzippedBytes := buffer.Bytes()
 	return gzippedBytes
 }
@@ -111,10 +112,10 @@ func writeFileToS3(gzippedBytes []byte, remoteFilename string, gzipped bool) err
 	reader := bytes.NewReader(gzippedBytes)
 	key := path.Join(s3Path, remoteFilename)
 	contentType := "application/octet-stream"
-	cacheControl := ""
+	var cacheControl *string
 	if strings.HasSuffix(remoteFilename, ".json") {
 		contentType = "application/json"
-		cacheControl = "no-cache, no-store, must-revalidate"
+		cacheControl = aws.String("no-cache, no-store, must-revalidate")
 	} else {
 		// ensure executable file doesn't already exist
 		headInput := &s3.HeadObjectInput{
@@ -133,7 +134,7 @@ func writeFileToS3(gzippedBytes []byte, remoteFilename string, gzipped bool) err
 		Body:          reader,
 		ContentLength: aws.Int64(int64(len(gzippedBytes))),
 		ContentType:   aws.String(contentType),
-		CacheControl:  aws.String(cacheControl),
+		CacheControl:  cacheControl,
 	}
 	if gzipped {
 		putInput.ContentEncoding = aws.String("gzip")

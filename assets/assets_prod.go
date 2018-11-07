@@ -209,7 +209,7 @@ func init() {
 				fi: FileInfo{
 					name:    "HotReload.js",
 					size:    764,
-					modTime: time.Unix(0, 1541583713757765600),
+					modTime: time.Unix(0, 1541585955034179500),
 					isDir:   false,
 				},
 			},"/assets/static/SocketClient.js": File{
@@ -347,7 +347,7 @@ func init() {
 				fi: FileInfo{
 					name:    "SocketClient.js",
 					size:    1546,
-					modTime: time.Unix(0, 1541583713753760700),
+					modTime: time.Unix(0, 1541585955034179500),
 					isDir:   false,
 				},
 			},"/assets/static/test-asset.js": File{
