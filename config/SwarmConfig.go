@@ -73,7 +73,7 @@ func (config *SwarmConfig) backfillWithDefaults(cwd string) {
 }
 
 // TryLoadSwarmConfigFromCWD tries to load a swarm.json configuration from the current working directory
-func TryLoadSwarmConfigFromCWD() (*SwarmConfig, error) {
+func TryLoadSwarmConfigFromCWD(portFlag *uint16) (*SwarmConfig, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Failed to get CWD: %s", err)
@@ -82,7 +82,15 @@ func TryLoadSwarmConfigFromCWD() (*SwarmConfig, error) {
 	if _, err := os.Stat(swarmjsonFilepath); err != nil {
 		return DefaultSwarmConfig(cwd), nil
 	}
-	return LoadSwarmConfig(swarmjsonFilepath, cwd)
+	config, err := LoadSwarmConfig(swarmjsonFilepath, cwd)
+	if err != nil {
+		return nil, err
+	}
+
+	if portFlag != nil { // flag overrides
+		config.Server.Port = *portFlag
+	}
+	return config, nil
 }
 
 func getDefaultRootPath() string {

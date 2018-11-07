@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	flag "github.com/spf13/pflag"
 )
 
 const title = "" +
@@ -17,4 +19,14 @@ const title = "" +
 func PrintTitle(version string) {
 	log.SetOutput(os.Stdout)
 	fmt.Printf(title, version)
+}
+
+// CheckHelp checks if the --help flag has been set
+func CheckHelp(helpFlag *bool) {
+	flag.Parse()
+
+	if helpFlag != nil && *helpFlag == true {
+		flag.Usage()
+		os.Exit(0)
+	}
 }

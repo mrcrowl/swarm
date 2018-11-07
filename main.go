@@ -11,12 +11,18 @@ import (
 	"swarm/util"
 	"swarm/version"
 	"swarm/web"
+
+	flag "github.com/spf13/pflag"
 )
 
-const localver = "1.0.6"
+const localver = "1.0.7"
+
+var portFlag = flag.Uint16P("port", "p", uint16(8096), "Web server port number")
+var helpFlag = flag.BoolP("help", "h", false, "Shows the usage")
 
 func main() {
 	ui.PrintTitle(localver)
+	ui.CheckHelp(helpFlag)
 
 	if didUpdate, _ := version.AutoUpdate(localver); didUpdate {
 		fmt.Println("updated. Please restart!")
@@ -24,9 +30,9 @@ func main() {
 	}
 
 	// configuration
-	swarmConfig, err := config.TryLoadSwarmConfigFromCWD()
+	swarmConfig, err := config.TryLoadSwarmConfigFromCWD(portFlag)
 	util.ExitIfError(err, "Failed to load swarm.json file: %s", err)
-	runtimeConfig := ui.ChooseBuild(swarmConfig.Builds)
+	runtimeConfig := ui.ChooseBuild(swarmConfig.Builds, flag.Args())
 	moduleDescrs, err := config.LoadBuildDescriptionFile(runtimeConfig.BuildPath)
 	util.ExitIfError(err, "Failed to load build description file: '%s'", runtimeConfig.BuildPath)
 

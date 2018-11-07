@@ -120,6 +120,9 @@ func TestTryLoadSwarmConfigFromCWD(t *testing.T) {
 	defer testutil.RemoveTempDir(temppath)
 	testutil.WriteTextFile(temppath, swarmConfigDefaultFilename, swarmConfigJSONComplete)
 	os.Chdir(temppath)
-	_, err := TryLoadSwarmConfigFromCWD()
+	_, err := TryLoadSwarmConfigFromCWD(nil)
 	assert.Nil(t, err)
+	var port = uint16(1234)
+	conf, _ := TryLoadSwarmConfigFromCWD(&port)
+	assert.Equal(t, uint16(1234), conf.Server.Port)
 }

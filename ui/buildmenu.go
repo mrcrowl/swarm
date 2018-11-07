@@ -18,10 +18,10 @@ const windowsPrompt = "C:\\>"
 const linuxPrompt = "$ "
 
 // ChooseBuild chooses the build to use from a list of builds, invoking a user prompt if necessary
-func ChooseBuild(builds map[string]*config.RuntimeConfig) *config.RuntimeConfig {
-	if len(os.Args) > 1 {
+func ChooseBuild(builds map[string]*config.RuntimeConfig, tailArgs []string) *config.RuntimeConfig {
+	if len(tailArgs) > 0 {
 		// build specified as first command line argument
-		buildName := os.Args[1]
+		buildName := tailArgs[0]
 		if build, found := builds[buildName]; found {
 			return build
 		}
