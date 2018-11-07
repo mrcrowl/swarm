@@ -13,7 +13,7 @@ import (
 	"swarm/web"
 )
 
-const localver = "1.0.2"
+const localver = "1.0.3"
 
 func main() {
 	ui.PrintTitle(localver)
