@@ -19,7 +19,7 @@ func main() {
 	ui.PrintTitle(localver)
 
 	if didUpdate, _ := version.AutoUpdate(localver); didUpdate {
-		fmt.Print("updated. Please restart!")
+		fmt.Println("updated. Please restart!")
 		os.Exit(0)
 	}
 
