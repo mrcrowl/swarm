@@ -44,7 +44,6 @@ func skipPreamble(lines []string) ([]string, int) {
 		}
 		if strings.HasPrefix(line, "/*") {
 			inBlockComment = true
-			continue
 		}
 		if inBlockComment {
 			if strings.Contains(line, "*/") {

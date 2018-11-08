@@ -151,6 +151,16 @@ blah blah something else`
 	assert.Equal(t, 3, numLines)
 }
 
+func TestSkipPreambleBlockSameLine(t *testing.T) {
+	source := `/* comment 1 */ 
+blah blah something else`
+
+	lines := strings.Split(source, "\n")
+	preamble, numLines := skipPreamble(lines)
+	assert.Len(t, preamble, 1)
+	assert.Equal(t, 1, numLines)
+}
+
 func TestSkipPreambleMixture(t *testing.T) {
 	source := `/* comment 1
  comment 2
