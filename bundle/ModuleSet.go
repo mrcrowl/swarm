@@ -22,6 +22,7 @@ type ModuleSet struct {
 // CreateModuleSet creates a ModuleSet from a list of NormalisedModuleDescriptions
 func CreateModuleSet(ws *source.Workspace, moduleDescriptions []*config.NormalisedModuleDescription, runtimeConfig *config.RuntimeConfig) *ModuleSet {
 	modules := make([]*Module, len(moduleDescriptions))
+	runtimeConfig.SetPathInterpolationValues(ws.ReadInterpolationValues(runtimeConfig))
 	for i, descr := range moduleDescriptions {
 		modules[i] = NewModule(ws, descr, runtimeConfig)
 	}

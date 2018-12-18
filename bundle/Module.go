@@ -75,9 +75,9 @@ func (mod *Module) excludedFilesets() []*source.FileSet {
 
 func (mod *Module) buildInitialFileSet() {
 	excludedFilesets := mod.excludedFilesets()
-	fileset := dep.BuildFileSet(mod.fileset.Workspace(), mod.PrimaryEntryPoint(), excludedFilesets)
+	fileset := dep.BuildFileSet(mod.fileset.Workspace(), mod.PrimaryEntryPoint(), excludedFilesets, mod.runtimeConfig.ImportPathInterpolationValues())
 	for _, entryPoint := range mod.entryPoints {
-		dep.UpdateFileset(fileset, entryPoint, excludedFilesets)
+		dep.UpdateFileset(fileset, entryPoint, excludedFilesets, mod.runtimeConfig.ImportPathInterpolationValues())
 	}
 	mod.fileset = fileset
 }
@@ -89,7 +89,7 @@ func (mod *Module) absorbChanges(changes *monitor.EventChangeset) {
 	for _, entryPoint := range changes.Changes() {
 		entryPointRelativePath, ok := ws.ToRelativePath(entryPoint.AbsoluteFilepath())
 		if ok {
-			dep.UpdateFileset(mod.fileset, entryPointRelativePath, excludedFilesets)
+			dep.UpdateFileset(mod.fileset, entryPointRelativePath, excludedFilesets, mod.runtimeConfig.ImportPathInterpolationValues())
 		}
 	}
 }

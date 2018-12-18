@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	// "github.com/stretchr/testify/assert"
 )
 
 func TestFollowDependencyGraph(t *testing.T) {
 	ws := source.NewWorkspace("C:\\WF\\LP\\web\\App")
-	followDependencyChain(ws, "app\\src\\ep\\App.js", nil)
+	followDependencyChain(ws, "app\\src\\ep\\App.js", nil, map[string]string{})
 }
 
 const jsFileWithCommentsBeforeSystemRegister = `// the dependency above is required by evaluateVariables() method
@@ -28,6 +27,6 @@ func TestReadDependencies(t *testing.T) {
 	imp := source.NewImport("./VariableEvaluator.js")
 	file, err := ws.ReadSourceFile(imp)
 	assert.Nil(t, err)
-	dependencies := readDependencies(file)
+	dependencies := readDependencies(file, map[string]string{})
 	assert.Len(t, dependencies, 3)
 }

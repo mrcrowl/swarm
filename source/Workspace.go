@@ -1,9 +1,11 @@
 package source
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"swarm/config"
 )
 
 // Workspace is
@@ -48,6 +50,21 @@ func normaliseFilepath(filepath string, requireSuffix bool) string {
 // RootPath returns the workspace's root path
 func (ws *Workspace) RootPath() string {
 	return ws.rootPath
+}
+
+// ReadInterpolationValues returns a map of key/value pairs that can be interpolated into import paths
+func (ws *Workspace) ReadInterpolationValues(config *config.RuntimeConfig) map[string]string {
+	// TODO: Config.js is hard-coded for now
+	//       Ideally, this would come from configuration
+
+	file, err := ws.ReadSourceFile(NewImport("./Config.js"))
+	if err != nil {
+		fmt.Println("ERR: Failed to read interpolation values from Config.js")
+	}
+
+	file.EnsureLoaded(config)
+	values := readInterpolationValues("Config", file.RawContents().BundleLines())
+	return values
 }
 
 // ReadSourceFile loads a source file

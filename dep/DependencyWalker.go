@@ -9,15 +9,20 @@ import (
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file
-func BuildFileSet(workspace *source.Workspace, entryFileRelativePath string, excludedFilesets []*source.FileSet) *source.FileSet {
-	imports, links := followDependencyChain(workspace, entryFileRelativePath, excludedFilesets)
+func BuildFileSet(
+	workspace *source.Workspace,
+	entryFileRelativePath string,
+	excludedFilesets []*source.FileSet,
+	interpolationValues map[string]string,
+) *source.FileSet {
+	imports, links := followDependencyChain(workspace, entryFileRelativePath, excludedFilesets, interpolationValues)
 	fileset := source.NewFileSet(imports, links, workspace)
 
 	return fileset
 }
 
 // UpdateFileset adds dependencies for an entry file to a FileSet
-func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, excludedFilesets []*source.FileSet) {
+func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, excludedFilesets []*source.FileSet, interpolationValues map[string]string) {
 	// assume a file has been touched/changed, so:
 	//
 	// 1. invalidate it's content
@@ -41,12 +46,17 @@ func UpdateFileset(fileset *source.FileSet, modifiedFileRelativePath string, exc
 		fileset.MarkDirty()
 
 		// 2. update the dependencies (but include "fileset" in the exclusions, so we don't follow paths we already know about)
-		imports, links := followDependencyChain(fileset.Workspace(), fileID, append(excludedFilesets, fileset))
+		imports, links := followDependencyChain(fileset.Workspace(), fileID, append(excludedFilesets, fileset), interpolationValues)
 		fileset.Ingest(imports, links, true)
 	}
 }
 
-func followDependencyChain(workspace *source.Workspace, entryFileRelativePath string, excludedFilesets []*source.FileSet /* may be nil */) ([]*source.Import, []*source.DependencyLink) {
+func followDependencyChain(
+	workspace *source.Workspace,
+	entryFileRelativePath string,
+	excludedFilesets []*source.FileSet, /* may be nil */
+	interpolationValues map[string]string,
+) ([]*source.Import, []*source.DependencyLink) {
 	queue := newImportQueue()
 	links := make([]*source.DependencyLink, 0, 2048)
 
@@ -77,7 +87,7 @@ func followDependencyChain(workspace *source.Workspace, entryFileRelativePath st
 		}
 
 		var dependencyIDs []string
-		for _, dep := range readDependencies(file) {
+		for _, dep := range readDependencies(file, interpolationValues) {
 			if dep.IsSolo {
 				continue
 			}
@@ -106,7 +116,7 @@ func followDependencyChain(workspace *source.Workspace, entryFileRelativePath st
 	return queue.outputImports(), links
 }
 
-func readDependencies(file *source.File) []*source.Import {
+func readDependencies(file *source.File, interpValues map[string]string) []*source.Import {
 	var line string
 	var err error
 	if line, err = util.ReadFirstLine(file.Filepath); err != nil {
@@ -117,7 +127,7 @@ func readDependencies(file *source.File) []*source.Import {
 	if dependencies, ok := source.ParseRegisterDependencies(line, true); ok {
 		filteredDeps = make([]*source.Import, 0, len(dependencies))
 		for _, dependencyImportPath := range dependencies {
-			dependencyImport := source.NewImport(dependencyImportPath)
+			dependencyImport := source.NewImportWithInterpolation(dependencyImportPath, interpValues)
 			filteredDeps = append(filteredDeps, dependencyImport)
 		}
 	}
