@@ -27,7 +27,7 @@ func injectBeforeClosingBody(html string, text string) string {
 }
 
 func createInlineScript(inline string, isModule bool) string {
-	typ := "javascript"
+	typ := "text/javascript"
 	if isModule {
 		typ = "module"
 	}
@@ -36,7 +36,7 @@ func createInlineScript(inline string, isModule bool) string {
 }
 
 func createSrcScript(src string, isModule bool) string {
-	typ := "javascript"
+	typ := "text/javascript"
 	if isModule {
 		typ = "module"
 	}

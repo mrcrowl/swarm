@@ -23,6 +23,7 @@ const swarmVirtualPath = "/__swarm__"
 const assetsPhysicalPath = "/assets/static"
 const hotReloadFilename = "HotReload.js"
 const socketClientFilename = "SocketClient.js"
+const cssEscapePolyfillFilename = "css.escape.js"
 const webSocketServerPath = swarmVirtualPath + "/ws"
 
 // Server is the state of the web server
@@ -148,6 +149,7 @@ func createStringHandleFunc(filename string) func(w http.ResponseWriter, r *http
 }
 
 func (server *Server) attachWebSocketListeners(mux *http.ServeMux, hub *SocketHub) {
+	mux.HandleFunc(swarmify(cssEscapePolyfillFilename), createStringHandleFunc(cssEscapePolyfillFilename))
 	mux.HandleFunc(swarmify(socketClientFilename), createStringHandleFunc(socketClientFilename))
 	mux.HandleFunc(swarmify(hotReloadFilename), createStringHandleFunc(hotReloadFilename))
 	mux.HandleFunc(webSocketServerPath, func(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +175,9 @@ func (server *Server) attachIndexInjectionListener(mux *http.ServeMux, fileServe
 					return
 				}
 				indexHTML := string(bytes)
-				injectedIndexHTML := InjectSrcJavascript(indexHTML, swarmify(hotReloadFilename), true)
+				var injectedIndexHTML string
+				injectedIndexHTML = InjectSrcJavascript(indexHTML, swarmify(cssEscapePolyfillFilename), false)
+				injectedIndexHTML = InjectSrcJavascript(injectedIndexHTML, swarmify(hotReloadFilename), true)
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				io.WriteString(w, injectedIndexHTML)
 				return

@@ -15,7 +15,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-const localver = "1.0.10"
+const localver = "1.0.11"
 
 var portFlag = flag.Uint16P("port", "p", uint16(8096), "Web server port number")
 var helpFlag = flag.BoolP("help", "h", false, "Shows the usage")
