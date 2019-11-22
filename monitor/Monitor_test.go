@@ -2,9 +2,9 @@ package monitor
 
 import (
 	"fmt"
-	"swarm/config"
-	"swarm/source"
-	"swarm/testutil"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/source"
+	"github.com/mrcrowl/swarm/testutil"
 	"testing"
 	"time"
 

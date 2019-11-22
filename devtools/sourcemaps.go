@@ -3,7 +3,7 @@ package devtools
 import (
 	"fmt"
 	"strings"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/source"
 )
 
 // PlayMappings loops through the mappings to calculate a "delta" that occurs

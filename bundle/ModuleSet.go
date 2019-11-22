@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"swarm/config"
-	"swarm/monitor"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/monitor"
+	"github.com/mrcrowl/swarm/source"
 	"sync"
 )
 

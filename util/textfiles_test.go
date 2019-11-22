@@ -1,7 +1,7 @@
 package util
 
 import (
-	"swarm/testutil"
+	"github.com/mrcrowl/swarm/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

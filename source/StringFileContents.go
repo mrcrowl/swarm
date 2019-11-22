@@ -2,7 +2,7 @@ package source
 
 import (
 	"fmt"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/util"
 )
 
 // StringFileContents describes a systemjs file

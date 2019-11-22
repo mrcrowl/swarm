@@ -4,9 +4,9 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"swarm/config"
-	"swarm/devtools"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/devtools"
+	"github.com/mrcrowl/swarm/source"
 )
 
 // Bundler is

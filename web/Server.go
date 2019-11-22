@@ -11,9 +11,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"swarm/assets"
-	"swarm/source"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/assets"
+	"github.com/mrcrowl/swarm/source"
+	"github.com/mrcrowl/swarm/util"
 	"time"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"swarm/source"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/source"
+	"github.com/mrcrowl/swarm/util"
 )
 
 // BuildFileSet creates a FileSet by following the dependency graph of an entry file

@@ -2,7 +2,7 @@ package web
 
 import (
 	"net/http"
-	"swarm/config"
+	"github.com/mrcrowl/swarm/config"
 )
 
 // ServerOptions specifies the parameters for the web server

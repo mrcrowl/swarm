@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/util"
 )
 
 const (

@@ -2,7 +2,7 @@ package devtools
 
 import (
 	"strings"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/source"
 )
 
 // SourceMapBuilder is used for compiling source maps from existing source map files

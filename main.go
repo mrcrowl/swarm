@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
-	"swarm/bundle"
-	"swarm/config"
-	"swarm/monitor"
-	"swarm/source"
-	"swarm/ui"
-	"swarm/util"
-	"swarm/version"
-	"swarm/web"
+	"github.com/mrcrowl/swarm/bundle"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/monitor"
+	"github.com/mrcrowl/swarm/source"
+	"github.com/mrcrowl/swarm/ui"
+	"github.com/mrcrowl/swarm/util"
+	"github.com/mrcrowl/swarm/version"
+	"github.com/mrcrowl/swarm/web"
 
 	flag "github.com/spf13/pflag"
 )

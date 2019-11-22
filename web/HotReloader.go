@@ -1,9 +1,9 @@
 package web
 
 import (
-	"swarm/bundle"
-	"swarm/monitor"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/bundle"
+	"github.com/mrcrowl/swarm/monitor"
+	"github.com/mrcrowl/swarm/source"
 )
 
 // HotReloader is responsible for managing hot reloads

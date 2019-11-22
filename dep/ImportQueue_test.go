@@ -1,7 +1,7 @@
 package dep
 
 import (
-	"swarm/source"
+	"github.com/mrcrowl/swarm/source"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

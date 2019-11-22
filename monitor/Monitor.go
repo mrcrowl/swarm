@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"swarm/config"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/source"
 	"sync"
 	"time"
 

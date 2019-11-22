@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"path"
-	"swarm/config"
-	"swarm/dep"
-	"swarm/monitor"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/dep"
+	"github.com/mrcrowl/swarm/monitor"
+	"github.com/mrcrowl/swarm/source"
 )
 
 // Module is a container for managing part of a build

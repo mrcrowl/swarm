@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"swarm/testutil"
+	"github.com/mrcrowl/swarm/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

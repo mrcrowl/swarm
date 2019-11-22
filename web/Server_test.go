@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"swarm/config"
-	"swarm/testutil"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

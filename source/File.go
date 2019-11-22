@@ -3,8 +3,8 @@ package source
 import (
 	"path/filepath"
 	"strings"
-	"swarm/config"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/util"
 )
 
 // File represents a single file containing source code

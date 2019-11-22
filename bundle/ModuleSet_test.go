@@ -1,8 +1,8 @@
 package bundle
 
 import (
-	"swarm/config"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/config"
+	"github.com/mrcrowl/swarm/source"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

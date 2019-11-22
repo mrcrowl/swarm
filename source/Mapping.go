@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"swarm/util"
+	"github.com/mrcrowl/swarm/util"
 )
 
 // Mapping is

@@ -1,6 +1,6 @@
 package dep
 
-import "swarm/source"
+import "github.com/mrcrowl/swarm/source"
 
 // importQueue represents a queue of dependencies to process
 type importQueue struct {

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"swarm/config"
+	"github.com/mrcrowl/swarm/config"
 )
 
 const windowsExecName = "swarm"

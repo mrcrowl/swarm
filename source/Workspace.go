@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"swarm/config"
+	"github.com/mrcrowl/swarm/config"
 )
 
 // Workspace is

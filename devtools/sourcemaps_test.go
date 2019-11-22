@@ -2,7 +2,7 @@ package devtools
 
 import (
 	"log"
-	"swarm/source"
+	"github.com/mrcrowl/swarm/source"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
