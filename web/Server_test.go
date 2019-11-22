@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"testing"
+
 	"github.com/mrcrowl/swarm/config"
 	"github.com/mrcrowl/swarm/testutil"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -129,7 +130,7 @@ func TestIndexInjectionListener(t *testing.T) {
 	}{
 		"index+inject": {
 			url:      "/app/index.html",
-			expected: fmt.Sprintf(`<body>HELLO WORLD<script type="module" src="%s/%s"></script></body>`, swarmVirtualPath, hotReloadFilename),
+			expected: fmt.Sprintf(`<body>HELLO WORLD<script type="text/javascript" src="/__swarm__/css.escape.js"></script><script type="module" src="%s/%s"></script></body>`, swarmVirtualPath, hotReloadFilename),
 			mimetype: `text/html; charset=utf-8`,
 		},
 		"html-served-by-same-handler": {
