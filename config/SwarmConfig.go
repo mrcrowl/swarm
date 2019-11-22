@@ -13,7 +13,7 @@ import (
 )
 
 const swarmConfigDefaultFilename = "swarm.json"
-const defaultRootPathWindows = "c:\\wf\\lp\\web\\App"
+const defaultRootPathWindows = "%s\\web\\App"
 const defaultRootPathMacOSAndLinux = "%s/web/App" // <-- %s will be replaced with user dir
 const defaultServerPort uint16 = 8096
 
@@ -94,11 +94,12 @@ func TryLoadSwarmConfigFromCWD(portFlag *uint16) (*SwarmConfig, error) {
 }
 
 func getDefaultRootPath() string {
+	usr, _ := user.Current()
+
 	if runtime.GOOS == "windows" {
-		return defaultRootPathWindows
+		return fmt.Sprintf(defaultRootPathWindows, usr.HomeDir)
 	}
 
-	usr, _ := user.Current()
 	return fmt.Sprintf(defaultRootPathMacOSAndLinux, usr.HomeDir)
 }
 

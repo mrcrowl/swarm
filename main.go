@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+
 	"github.com/mrcrowl/swarm/bundle"
 	"github.com/mrcrowl/swarm/config"
 	"github.com/mrcrowl/swarm/monitor"

@@ -76,12 +76,12 @@ func TestGetBinaryURL(t *testing.T) {
 		"window": {
 			version:  "1.9.0",
 			platform: "windows",
-			expected: versionsPath + "/swarm-1.9.0-windows.exe",
+			expected: baseURL + "/swarm-1.9.0-windows.exe",
 		},
 		"macOS": {
 			version:  "1.1.0",
 			platform: "darwin",
-			expected: versionsPath + "/swarm-1.1.0-darwin",
+			expected: baseURL + "/swarm-1.1.0-darwin",
 		},
 	}
 	for name, tc := range cases {

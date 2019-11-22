@@ -13,8 +13,10 @@ import (
 	"github.com/inconshreveable/go-update"
 )
 
-const versionsPath = "https://test.languageperfect.com/swarm"
-const versionURL = versionsPath + "/version.json"
+// baseURL is the source for auto-updates
+
+var performAutoUpdate = false         // replaced at build time
+var baseURL = "https://null.io/swarm" // replaced at build time
 
 var internet InternetLike = &realInternet{}
 var updater UpdaterLike = &realUpdater{}
@@ -27,6 +29,7 @@ type JSON struct {
 // IsUpdateRequired determines whether an application update is needed
 // by comparing the local version to the remote version
 func IsUpdateRequired(localVersionString string) (bool, *semver.Version) {
+	var versionURL = baseURL + "/version.json"
 	json := readStringFromURL(versionURL)
 	remoteVersion := readJSONVersion(json)
 	localVersion := semver.New(localVersionString)
@@ -38,22 +41,24 @@ func IsUpdateRequired(localVersionString string) (bool, *semver.Version) {
 
 // AutoUpdate carries out an auto-update if needed and returns a bool indicating what occurred
 func AutoUpdate(localVersionString string) (bool, *semver.Version) {
-	updateReq, newVersion := IsUpdateRequired(localVersionString)
-	if updateReq {
-		fmt.Printf("Downloading version %v...", newVersion)
-		downloadBytes, err := downloadBinary(newVersion)
-		if err == nil {
-			reader := bytes.NewReader(downloadBytes)
-
-			err = updater.Apply(reader, update.Options{OldSavePath: oldSavePath()})
+	if performAutoUpdate {
+		updateReq, newVersion := IsUpdateRequired(localVersionString)
+		if updateReq {
+			fmt.Printf("Downloading version %v...", newVersion)
+			downloadBytes, err := downloadBinary(newVersion)
 			if err == nil {
-				return true, newVersion
+				reader := bytes.NewReader(downloadBytes)
+
+				err = updater.Apply(reader, update.Options{OldSavePath: oldSavePath()})
+				if err == nil {
+					return true, newVersion
+				}
+				log.Printf("Failed to apply update for version %v: %v", newVersion, err)
+				return false, nil
 			}
-			log.Printf("Failed to apply update for version %v: %v", newVersion, err)
+			log.Printf("Failed to download binary for %v: %v", newVersion, err)
 			return false, nil
 		}
-		log.Printf("Failed to download binary for %v: %v", newVersion, err)
-		return false, nil
 	}
 
 	// no update required
@@ -84,7 +89,7 @@ func getBinaryURL(version *semver.Version, platform string) string {
 	if platform != "windows" {
 		suffix = ""
 	}
-	url := fmt.Sprintf("%s/swarm-%s-%s%s", versionsPath, version, platform, suffix)
+	url := fmt.Sprintf("%s/swarm-%s-%s%s", baseURL, version, platform, suffix)
 	return url
 }
 
