@@ -1,8 +1,10 @@
 package util
 
 import (
-	"github.com/mrcrowl/swarm/testutil"
+	"strings"
 	"testing"
+
+	"github.com/mrcrowl/swarm/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -104,10 +106,11 @@ func TestCountLinesWindows(t *testing.T) {
 }
 
 func TestCountLooooongLines(t *testing.T) {
-	source := testutil.ReadTextFile("c:\\wf\\lp\\web\\App\\node_modules\\systemjs\\dist", "system.js")
+	source := strings.Repeat("I'm a long line", 10000) + "\n" +
+		strings.Repeat("I'm also a relatively long line", 1000) + "\n"
 	count, err := CountLines(source)
 	assert.Nil(t, err)
-	assert.Equal(t, 6, count)
+	assert.Equal(t, 2, count)
 }
 
 func TestStringToLines(t *testing.T) {

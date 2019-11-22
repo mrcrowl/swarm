@@ -26,7 +26,7 @@ func TestReadJSONVersionInvalidVersion(t *testing.T) {
 }
 
 func TestReadStringFromURL(t *testing.T) {
-	contents := readStringFromURL(versionURL)
+	contents := readStringFromURL("https://duckduckgo.com/")
 	assert.NotEmpty(t, contents)
 }
 
@@ -37,7 +37,7 @@ func TestReadStringFromURLBadURL(t *testing.T) {
 
 func TestIsUpdateRequiredTrue(t *testing.T) {
 	mock := newMockInternet()
-	mock.addStringResponse(versionURL, `{ "version": "1.0.0" }`)
+	mock.addStringResponse(versionURL(), `{ "version": "1.0.0" }`)
 	internet = mock
 	actual, version := IsUpdateRequired("0.9.1")
 	assert.NotNil(t, version)
@@ -46,7 +46,7 @@ func TestIsUpdateRequiredTrue(t *testing.T) {
 
 func TestIsUpdateRequiredFalse(t *testing.T) {
 	mock := newMockInternet()
-	mock.addStringResponse(versionURL, `{ "version": "1.0.0" }`)
+	mock.addStringResponse(versionURL(), `{ "version": "1.0.0" }`)
 	internet = mock
 	actual, version := IsUpdateRequired("1.0.0")
 	assert.Nil(t, version)
@@ -59,7 +59,7 @@ func TestDownloadBinary(t *testing.T) {
 	binaryURL := getBinaryURL(remoteVersion, platform)
 	mock := newMockInternet()
 	mock.addStringResponse(binaryURL, string([]byte{0x1, 0x2, 0x3, 0x4}))
-	mock.addStringResponse(versionURL, `{ "version": "1.0.1" }`)
+	mock.addStringResponse(versionURL(), `{ "version": "1.0.1" }`)
 	internet = mock
 
 	bytes, err := downloadBinary(remoteVersion)
@@ -94,11 +94,14 @@ func TestGetBinaryURL(t *testing.T) {
 }
 
 func TestAutoUpdate(t *testing.T) {
+	if !performAutoUpdate {
+		return
+	}
 	remoteVersion := semver.New("1.0.1")
 	binaryURL := getBinaryURL(remoteVersion, runtime.GOOS)
 	mock := newMockInternet()
 	mock.addStringResponse(binaryURL, string([]byte{0x1, 0x2, 0x3, 0x4}))
-	mock.addStringResponse(versionURL, `{ "version": "1.0.1" }`)
+	mock.addStringResponse(versionURL(), `{ "version": "1.0.1" }`)
 	internet = mock
 
 	mockUpdater := &mockUpdater{}

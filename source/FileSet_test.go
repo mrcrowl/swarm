@@ -52,20 +52,20 @@ func TestAddDistinct(t *testing.T) {
 	assert.Equal(t, 1, sut.linkCount())
 }
 
-func TestNewBuilder(t *testing.T) {
-	imports := []*Import{
-		NewImport("Config"),
-		NewImport("app/index.html"),
-		NewImport("app/src/ConfigApp"),
-	}
-	links := []*DependencyLink{
-		NewDependencyLink("app/src/ConfigApp", []string{"Config"}),
-	}
-	ws := NewWorkspace("C:\\WF\\LP\\web\\App")
-	sut := NewFileSet(imports, links, ws)
-	assert.Equal(t, 3, sut.Count())
-	assert.Equal(t, 1, sut.linkCount())
-}
+// func TestNewBuilder(t *testing.T) {
+// 	imports := []*Import{
+// 		NewImport("Config"),
+// 		NewImport("app/index.html"),
+// 		NewImport("app/src/ConfigApp"),
+// 	}
+// 	links := []*DependencyLink{
+// 		NewDependencyLink("app/src/ConfigApp", []string{"Config"}),
+// 	}
+// 	ws := NewWorkspace("C:\\WF\\LP\\web\\App")
+// 	sut := NewFileSet(imports, links, ws)
+// 	assert.Equal(t, 3, sut.Count())
+// 	assert.Equal(t, 1, sut.linkCount())
+// }
 
 // Topologically-sorted builds weren't required for SystemJS after all.
 // ==================================================================

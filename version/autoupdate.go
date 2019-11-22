@@ -26,11 +26,14 @@ type JSON struct {
 	Version string `json:"version"`
 }
 
+func versionURL() string {
+	return baseURL + "/version.json"
+}
+
 // IsUpdateRequired determines whether an application update is needed
 // by comparing the local version to the remote version
 func IsUpdateRequired(localVersionString string) (bool, *semver.Version) {
-	var versionURL = baseURL + "/version.json"
-	json := readStringFromURL(versionURL)
+	json := readStringFromURL(versionURL())
 	remoteVersion := readJSONVersion(json)
 	localVersion := semver.New(localVersionString)
 	if localVersion.LessThan(*remoteVersion) {
