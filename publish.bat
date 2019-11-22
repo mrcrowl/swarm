@@ -1,11 +1,12 @@
 @echo off
 
-cd scripts
+pushd .
+cd ..\..\..\swarm-tools\scripts
 
 echo Getting go packages...
 go get
 go run publish.go
 
-cd..
+popd
 echo.
 echo Done!

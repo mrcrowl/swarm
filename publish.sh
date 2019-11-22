@@ -1,7 +1,7 @@
 #!/bin/bash
 
 pushd . >/dev/null 2>&1
-cd scripts
+cd ../../../swarm-tools/scripts
 
 echo Getting go packages...
 go get
