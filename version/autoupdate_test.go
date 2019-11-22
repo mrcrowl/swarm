@@ -31,7 +31,7 @@ func TestReadStringFromURL(t *testing.T) {
 }
 
 func TestReadStringFromURLBadURL(t *testing.T) {
-	contents := readStringFromURL("test.languageperfect.com/swarm/version.json")
+	contents := readStringFromURL("no.protocol.specified.com/swarm/version.json")
 	assert.Empty(t, contents)
 }
 
@@ -76,12 +76,12 @@ func TestGetBinaryURL(t *testing.T) {
 		"window": {
 			version:  "1.9.0",
 			platform: "windows",
-			expected: "https://test.languageperfect.com/swarm/swarm-1.9.0-windows.exe",
+			expected: versionsPath + "/swarm-1.9.0-windows.exe",
 		},
 		"macOS": {
 			version:  "1.1.0",
 			platform: "darwin",
-			expected: "https://test.languageperfect.com/swarm/swarm-1.1.0-darwin",
+			expected: versionsPath + "/swarm-1.1.0-darwin",
 		},
 	}
 	for name, tc := range cases {
