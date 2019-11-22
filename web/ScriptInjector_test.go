@@ -15,7 +15,7 @@ func TestInjectSrcJavascriptBodyModule(t *testing.T) {
 
 func TestInjectSrcJavascriptHeadModule(t *testing.T) {
 	actual := InjectSrcJavascript(`<html><head><title /></head><body><div></div></body></html>`, "/abcd/test.js", true)
-	expected := `<html><head><title /><script type="module" src="/abcd/test.js"></script></head><body><div></div></body></html>`
+	expected := `<html><head><title /></head><body><div></div><script type="module" src="/abcd/test.js"></script></body></html>`
 	assert.Equal(t, expected, actual)
 }
 
