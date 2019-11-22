@@ -147,10 +147,10 @@ func isJSTernary(value string) (is bool, condition string, whenTrue string, when
 	return false, "", "", ""
 }
 
-// interpretTernary
+// interpretTernary chooses between two alternatives, based on a dictionary value being true or "true (vs. false)
 func interpretTernary(values map[string]string, condition string, whenTrue string, whenFalse string) string {
 	value := values[condition]
-	if value == "true" {
+	if value == "true" || value == "\"true\"" {
 		if is, trueValue := isJSPrimitive(whenTrue); is {
 			return trueValue
 		}
