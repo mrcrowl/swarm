@@ -153,8 +153,9 @@ func (fs *FileSet) containsFile(file *File) bool {
 func (fs *FileSet) Contains(id string) bool {
 	if _, ok := fs.index[id]; ok {
 		return true
+	} else {
+		return false
 	}
-	return false
 }
 
 // Count returns the number of files
